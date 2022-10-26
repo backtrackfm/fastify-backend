@@ -1,10 +1,25 @@
 import fastify from "fastify";
 import * as dotenv from "dotenv";
+import autoload from "@fastify/autoload";
+import path from "path";
+import { env } from "./lib/env";
 
 const app = fastify();
-dotenv.config();
+dotenv.config({
+  path: path.join(__dirname, "..", ".env.local"),
+});
 
-const port = Number(process.env.PORT || 4000);
+const port = env.PORT || 4000;
+
+// Register plugins
+app.register(autoload, {
+  dir: path.join(__dirname, "routes"),
+  dirNameRoutePrefix: true, // lack of prefix will mean no prefix, instead of directory name
+  routeParams: true,
+  options: {
+    prefix: env.API_PREFIX,
+  },
+});
 
 app.listen({ port, host: "0.0.0.0" }, (err, address) => {
   if (err) {

@@ -1,4 +1,4 @@
-# T3 FASTIFY x DOCKER TEMPLATE
+# T3 FASTIFY FLAGSHIP TEMPLATE
 
 ## Usage
 
@@ -9,6 +9,7 @@ Simply press the "Use Template" button in GitHub to create a new repository usin
 - `server.ts` for basic fastify server creation
 - `Dockerfile`, `docker-compose.yml` and `docker-compose.prod.yml` for all stuff Docker
 - `Makefile` for making those pesky Docker commands all that easier to type
+- `env.ts` for env stuffs
 
 NB: edit content found in `package.json` and `docker-compose.yml` according to your project.
 
