@@ -1,16 +1,35 @@
 version: "3.4"
 services:
+  postgres:
+    image: postgres:latest
+    container_name: t3-postgres
+    hostname: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Todo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
   t3:
     build:
       context: .
       dockerfile: Dockerfile
-      target: base
     volumes:
       - ./src:/home/node/app/src
       - ./nodemon.json:/home/node/app/nodemon.json
-    container_name: t3-fastify
+    container_name: t3-fastify-prisma
     expose:
       - "4000"
     ports:
       - "4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/mydb?schema=public"
     command: npm run dev
+    platform: "linux/amd64"
+    links:
+      - postgrse
+volumes:
+  postgres-data:

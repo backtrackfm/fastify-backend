@@ -3,6 +3,7 @@ import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
 import { env } from "./lib/env";
+import { PrismaClient } from "@prisma/client";
 
 const app = fastify();
 dotenv.config({
@@ -10,6 +11,7 @@ dotenv.config({
 });
 
 const port = env.PORT || 4000;
+export const db = new PrismaClient();
 
 // Register plugins
 app.register(autoload, {

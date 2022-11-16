@@ -1,8 +1,8 @@
-# T3 FASTIFY FLAGSHIP TEMPLATE
+# T3 FASTIFY x PRISMA TEMPLATE
 
 ## Usage
 
-Simply press the "Use Template" button in GitHub to create a new repository using this template.
+Simply press the "Use Template" button in GitHub to create a new repository using this template. Rebuild docker image when changing prisma schema or package.json.
 
 ## Main files
 
