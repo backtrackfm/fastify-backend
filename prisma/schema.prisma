@@ -7,9 +7,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  ARTIST
+  PRODUCER
+  ENGINEER
+}
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String
-  password String
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String
+  password             String
+  type                 UserType  @default(ARTIST)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @default(now())
+  createdProjects      Project[] @relation("ProjectByUser")
+  collaboratedProjects Project[] @relation("ProjectIncludesUser")
+}
+
+model Project {
+  id              String   @id @default(cuid())
+  genre           String
+  name            String
+  tags            String[]
+  coverArtURL     String?
+  description     String?
+  createdBy       User     @relation("ProjectByUser", fields: [createdByUserId], references: [id])
+  createdByUserId String
+  collaborators   User[]   @relation("ProjectIncludesUser")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  branches        Branch[]
+}
+
+model Branch {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  name        String
+  description String?
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   String
+  versions    Version[]
+}
+
+model Version {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+  name            String
+  tags            String[]
+  description     String?
+  branch          Branch    @relation(fields: [branchId], references: [id])
+  branchId        String
+  previews        Preview[]
+  projectFilesURL String // A URL to download the .als files
+}
+
+model Preview {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  title     String
+  fileURL   String
+  version   Version  @relation(fields: [versionId], references: [id])
+  versionId String
 }
