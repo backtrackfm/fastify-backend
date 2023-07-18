@@ -1,5 +1,4 @@
 import { FastifyInstance, RouteOptions } from "fastify";
-import { db } from "../../server";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
   // GET A USER FROM THE DATABASE BY ID

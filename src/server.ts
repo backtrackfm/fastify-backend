@@ -3,15 +3,65 @@ import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
 import { env } from "./lib/env";
-import { PrismaClient } from "@prisma/client";
+import fastifySecureSession from "@fastify/secure-session";
+import fastifyPassport from "@fastify/passport";
+import LocalStrategy from "passport-local";
+import { prisma } from "./lib/prisma";
+import bcrypt from "bcrypt";
+import fs from "fs";
 
 const app = fastify();
 dotenv.config({
-  path: path.join(__dirname, "..", ".env.local"),
+  path: path.join(__dirname, "..", ".env"),
 });
 
+app.register(fastifySecureSession, {
+  key: fs.readFileSync(path.join(__dirname, "../example-key")),
+});
+
+app.register(fastifyPassport.initialize());
+
+app.register(fastifyPassport.secureSession());
+
+fastifyPassport.use(
+  new LocalStrategy.Strategy(async (username, password, done) => {
+    let attemptedUser;
+
+    try {
+      attemptedUser = await prisma.user.findFirst({
+        where: {
+          name: username,
+        },
+      });
+    } catch (e) {
+      return done(e);
+    }
+
+    if (!attemptedUser) {
+      return done(null, false);
+    }
+
+    if (bcrypt.compareSync(password, attemptedUser.password)) {
+      return done(null, false);
+    }
+
+    return done(null, attemptedUser);
+  })
+);
+
 const port = env.PORT || 4000;
-export const db = new PrismaClient();
+
+app.get(
+  "/auth/test",
+  {
+    preValidation: fastifyPassport.authenticate("local", {
+      failureRedirect: "/login",
+    }),
+  },
+  (req, res) => {
+    res.redirect("/");
+  }
+);
 
 // Register plugins
 app.register(autoload, {

@@ -1,4 +1,4 @@
-import { str, envsafe, port, url } from "envsafe";
+import { str, envsafe, port } from "envsafe";
 
 export const env = envsafe({
   NODE_ENV: str({
