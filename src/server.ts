@@ -6,11 +6,11 @@ import { env } from "./lib/env";
 import fastifySecureSession from "@fastify/secure-session";
 import fastifyPassport from "@fastify/passport";
 import LocalStrategy from "passport-local";
-import { prisma } from "./lib/prisma";
 import bcrypt from "bcrypt";
 import fs from "fs";
 import { ZodError } from "zod";
 import { stdReply } from "./lib/std-reply";
+import fastifyPrismaClient from "fastify-prisma-client";
 
 const app = fastify();
 dotenv.config({
@@ -25,14 +25,16 @@ app.register(fastifyPassport.initialize());
 
 app.register(fastifyPassport.secureSession());
 
+app.register(fastifyPrismaClient);
+
 fastifyPassport.use(
   new LocalStrategy.Strategy(async (username, password, done) => {
     let attemptedUser;
 
     try {
-      attemptedUser = await prisma.user.findFirst({
+      attemptedUser = await app.prisma.user.findFirst({
         where: {
-          name: username,
+          email: username,
         },
       });
     } catch (e) {
@@ -52,18 +54,6 @@ fastifyPassport.use(
 );
 
 const port = env.PORT || 4000;
-
-app.get(
-  "/auth/test",
-  {
-    preValidation: fastifyPassport.authenticate("local", {
-      failureRedirect: "/login",
-    }),
-  },
-  (req, res) => {
-    res.redirect("/");
-  }
-);
 
 app.setErrorHandler(function (error, request, reply) {
   if (error instanceof ZodError) {
