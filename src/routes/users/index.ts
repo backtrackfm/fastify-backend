@@ -2,6 +2,9 @@ import { FastifyInstance, RouteOptions } from "fastify";
 import { stdReply } from "../../lib/std-reply";
 import { signUpSchema } from "../../schema/usersSchema";
 import { prisma } from "../../lib/prisma";
+import bcrypt, { hash } from "bcrypt";
+import { UserType } from "@prisma/client";
+import passport from "@fastify/passport";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
   // CREATE A USER (SIGN UP)
@@ -25,11 +28,19 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
       });
     }
 
-    
+    const hashedPassword = await bcrypt.hash(details.password, 10);
+
+    const { id, ...user } = await prisma.user.create({
+      data: {
+        ...details,
+        password: hashedPassword,
+      },
+    });
 
     // All's well!
     return stdReply(reply, {
-      clientMessage: "hello",
+      clientMessage: "Success! User signed up",
+      data: id,
     });
   });
 }

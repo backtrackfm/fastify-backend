@@ -7,5 +7,5 @@ export const signUpSchema = z.object({
   email: STD_STRING.email(),
   name: STD_STRING.max(16),
   password: PASSWORD,
-  type: z.enum(["Artist", "Producer", "Engineer"]).default("Artist"),
+  type: z.enum(["ARTIST", "PRODUCER", "ENGINEER"]).default("ARTIST"),
 });
