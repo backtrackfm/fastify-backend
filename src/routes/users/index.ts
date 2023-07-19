@@ -1,12 +1,28 @@
 import { FastifyInstance, RouteOptions } from "fastify";
+import { stdReply } from "../../lib/std-reply";
+import { signUpSchema } from "../../schema/usersSchema";
+import { prisma } from "../../lib/prisma";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
-  // GET A USER FROM THE DATABASE BY ID
-  fastify.get("/", async (request, reply) => {
-    const params = request.params;
+  // CREATE A USER (SIGN UP)
+  fastify.post("/", async (request, reply) => {
+    const details = await signUpSchema.parseAsync(request.body);
 
-    // const user = await db.user.findFirst({ where: { id: request.params.id } });
-    reply.code(200).send("Hello World!");
+    // See if this user already exists
+    const maybeConflictUser = await prisma.user.findFirst({
+      where: {
+        email: details.email,
+      },
+    });
+
+    if (maybeConflictUser) {
+      return stdReply(reply, {});
+    }
+
+    // All's well!
+    return stdReply(reply, {
+      clientMessage: "hello",
+    });
   });
 }
 

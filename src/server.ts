@@ -1,4 +1,4 @@
-import fastify from "fastify";
+import fastify, { errorCodes } from "fastify";
 import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
@@ -9,6 +9,8 @@ import LocalStrategy from "passport-local";
 import { prisma } from "./lib/prisma";
 import bcrypt from "bcrypt";
 import fs from "fs";
+import { ZodError } from "zod";
+import { stdReply } from "./lib/std-reply";
 
 const app = fastify();
 dotenv.config({
@@ -62,6 +64,26 @@ app.get(
     res.redirect("/");
   }
 );
+
+app.setErrorHandler(function (error, request, reply) {
+  if (error instanceof ZodError) {
+    const issueMap = error.issues.map((it) => {
+      return {
+        field: it.path.join(" "),
+        issue: it.message,
+      };
+    });
+
+    stdReply(reply, {
+      error: {
+        code: 400,
+        details: issueMap,
+        type: "validation",
+      },
+      clientMessage: "Invalid form input",
+    });
+  }
+});
 
 // Register plugins
 app.register(autoload, {
