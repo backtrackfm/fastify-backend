@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fastify/autoload": "^5.7.1",
+    "@fastify/formbody": "^7.4.0",
     "@fastify/passport": "^2.3.0",
     "@fastify/secure-session": "^6.1.0",
     "@prisma/client": "^5.0.0",
@@ -20,6 +21,7 @@
     "envsafe": "^2.0.3",
     "fastify": "^4.20.0",
     "fastify-prisma-client": "^5.0.0",
+    "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "zod": "^3.21.4"
   },

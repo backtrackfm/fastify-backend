@@ -1,6 +1,5 @@
 import passport from "@fastify/passport";
 import { FastifyInstance, RouteOptions } from "fastify";
-import { loginPageRoute } from "../../../lib/consts";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -9,12 +8,7 @@ export default async function routes(
   fastify.post(
     "/",
     {
-      preValidation: passport.authenticate("local", {
-        successReturnToOrRedirect: "/api/locked",
-        failureRedirect: loginPageRoute,
-        failureMessage: true,
-        session: true,
-      }),
+      preHandler: passport.authenticate("local"),
     },
     async (request, reply) => {
       reply.send("Login");
