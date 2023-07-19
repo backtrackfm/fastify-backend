@@ -1,12 +1,14 @@
 import { FastifyReply } from "fastify";
 
+type StdErrorType = {
+  details?: unknown; // Posibility to provide further details
+  code: 400 | 500; // Sorry!
+  type: "conflict" | "validation" | "unknown";
+};
+
 type StdReply = {
   data?: unknown;
-  error?: {
-    details: unknown;
-    code: 400 | 500; // Sorry!
-    type: "validation" | "unknown";
-  };
+  error?: StdErrorType;
   clientMessage?: string; // The message displayed to the client
 };
 
@@ -21,7 +23,10 @@ export function stdReply(fastifyReply: FastifyReply, data?: StdReply) {
     return fastifyReply.code(data.error.code).send({
       data: data.data ?? null,
       clientMessage: data.clientMessage ?? null,
-      error: data.error.details,
+      error: {
+        details: data.error.details,
+        type: data.error.type,
+      },
     });
   }
 

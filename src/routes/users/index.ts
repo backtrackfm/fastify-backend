@@ -16,8 +16,16 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
     });
 
     if (maybeConflictUser) {
-      return stdReply(reply, {});
+      return stdReply(reply, {
+        error: {
+          code: 400,
+          type: "conflict",
+        },
+        clientMessage: "A user with this email already exists",
+      });
     }
+
+    
 
     // All's well!
     return stdReply(reply, {

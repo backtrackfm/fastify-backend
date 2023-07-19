@@ -74,7 +74,7 @@ app.setErrorHandler(function (error, request, reply) {
       };
     });
 
-    stdReply(reply, {
+    return stdReply(reply, {
       error: {
         code: 400,
         details: issueMap,
@@ -83,6 +83,15 @@ app.setErrorHandler(function (error, request, reply) {
       clientMessage: "Invalid form input",
     });
   }
+
+  return stdReply(reply, {
+    error: {
+      code: 500,
+      details: null,
+      type: "unknown",
+    },
+    clientMessage: "Something went wrong",
+  });
 });
 
 // Register plugins
