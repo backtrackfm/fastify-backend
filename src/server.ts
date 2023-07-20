@@ -8,7 +8,7 @@ import fastifyPassport from "@fastify/passport";
 import bcrypt from "bcrypt";
 import fs from "fs";
 import { ZodError } from "zod";
-import { stdReply } from "./lib/std-reply";
+import { StdReply, isStdReply, stdReply } from "./lib/std-reply";
 import fastifyPrismaClient from "fastify-prisma-client";
 import { fastifySecureSession } from "@fastify/secure-session";
 import passportLocal from "passport-local";
@@ -70,6 +70,10 @@ fastifyPassport.use(
     },
     // login method
     async (email, password, cb) => {
+      function err(stdError: StdReply) {
+        cb(stdError);
+      }
+
       const user = await app.prisma.user.findFirst({
         where: {
           email,
@@ -77,13 +81,25 @@ fastifyPassport.use(
       });
 
       if (!user) {
-        return cb("User with this email doesn't exist");
+        return err({
+          clientMessage: "User with this email doesn't exist",
+          error: {
+            type: "not-found",
+            code: 400,
+          },
+        });
       }
 
       const isCorrectPassword = await bcrypt.compare(password, user.password);
 
       if (!isCorrectPassword) {
-        return cb("Incorrect password");
+        return err({
+          error: {
+            code: 400,
+            type: "validation",
+          },
+          clientMessage: "Incorrect password",
+        });
       }
 
       // null and false for all other cases
@@ -93,10 +109,9 @@ fastifyPassport.use(
 );
 
 // register a serializer that stores the user object's id in the session ...
-fastifyPassport.registerUserSerializer<User, string>(async (user, request) => {
-  console.log(user);
-  return user.id;
-});
+fastifyPassport.registerUserSerializer<User, string>(
+  async (user, request) => user.id
+);
 
 // ... and then a deserializer that will fetch that user from the database when a request with an id in the session arrives
 
@@ -130,6 +145,11 @@ app.setErrorHandler(function (error, request, reply) {
       },
       clientMessage: "Invalid form input",
     });
+  }
+
+  // if error is a StdReply
+  if (isStdReply(error)) {
+    return stdReply(reply, error);
   }
 
   console.log(error);
