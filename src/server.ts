@@ -1,4 +1,4 @@
-import fastify, { errorCodes } from "fastify";
+import fastify from "fastify";
 import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
@@ -55,7 +55,15 @@ app.register(fastifyFormbody);
 
 // Sessions
 app.register(fastifySecureSession, {
-  key: fs.readFileSync(path.join(__dirname, "../example-key")),
+  // the name of the attribute decorated on the request-object, defaults to 'session'
+  sessionName: "session",
+  // the name of the session cookie, defaults to value of sessionName
+  cookieName: "auth-session-cookie",
+  key: fs.readFileSync(path.join(__dirname, "../secret_key")),
+  cookie: {
+    path: "/",
+    // options for setCookie, see https://github.com/fastify/fastify-cookie
+  },
 });
 
 app.register(fastifyPassport.initialize());

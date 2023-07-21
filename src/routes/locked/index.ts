@@ -1,6 +1,7 @@
 import passport from "@fastify/passport";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { loginPageRoute } from "../../lib/consts";
+import { User } from "@prisma/client";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -14,7 +15,13 @@ export default async function routes(
       }),
     },
     async (request, reply) => {
-      reply.send("Login");
+      const user = request.user as User | undefined;
+
+      if (!user) {
+        return reply.send("No user");
+      }
+
+      reply.send("Locked page: " + user.id);
     }
   );
 }

@@ -1,7 +1,6 @@
 import passport from "@fastify/passport";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { stdReply } from "../../../lib/std-reply";
-import { User } from "@prisma/client";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -14,7 +13,7 @@ export default async function routes(
     },
     async (request, reply) => {
       // TODO: properly type this
-      const user = request.user as User | undefined;
+      const user = request.user;
 
       if (!user) {
         throw new Error(); // Something went wrong...

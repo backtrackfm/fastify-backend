@@ -19,7 +19,7 @@
     "bcrypt": "^5.1.0",
     "dotenv": "^16.3.1",
     "envsafe": "^2.0.3",
-    "fastify": "^4.20.0",
+    "fastify": "4.19.0",
     "fastify-prisma-client": "^5.0.0",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
