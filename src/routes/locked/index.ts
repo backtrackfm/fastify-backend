@@ -2,6 +2,8 @@ import passport from "@fastify/passport";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { loginPageRoute } from "../../lib/consts";
 import { User } from "@prisma/client";
+import { stdReply } from "../../lib/std-reply";
+import { redirectToLogin } from "../../lib/auth";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -10,9 +12,8 @@ export default async function routes(
   fastify.get(
     "/",
     {
-      preValidation: passport.authenticate("local", {
-        failureRedirect: loginPageRoute, // sends us to login html page
-      }),
+      preValidation: async (request, reply) =>
+        await redirectToLogin(request, reply),
     },
     async (request, reply) => {
       const user = request.user as User | undefined;
@@ -21,7 +22,9 @@ export default async function routes(
         return reply.send("No user");
       }
 
-      reply.send("Locked page: " + user.id);
+      stdReply(reply, {
+        clientMessage: "Locked page: " + user.id,
+      });
     }
   );
 }

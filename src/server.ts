@@ -37,7 +37,7 @@ app.register(fastifySecureSession, {
 });
 
 app.register(fastifyPassport.initialize());
-app.register(fastifyPassport.secureSession());
+app.register(fastifyPassport.secureSession({}));
 
 // On login
 fastifyPassport.use(
@@ -105,6 +105,7 @@ fastifyPassport.registerUserDeserializer<string, User | null>(
 const port = env.PORT || 4000;
 
 app.setErrorHandler(function (error, request, reply) {
+  console.log(error);
   if (error instanceof ZodError) {
     const issueMap = error.issues.map((it) => {
       return {
@@ -155,6 +156,5 @@ app.listen({ port, host: "0.0.0.0" }, (err, address) => {
     console.error(err);
     process.exit(1);
   }
-
   console.log(`🛠 Server listening at ${address}`);
 });
