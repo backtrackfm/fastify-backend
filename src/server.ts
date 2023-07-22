@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
 import { env } from "./lib/env";
-// import fastifySecureSession from "@fastify/secure-session";
 import fastifyPassport from "@fastify/passport";
 import bcrypt from "bcrypt";
 import fs from "fs";
@@ -14,6 +13,7 @@ import { fastifySecureSession } from "@fastify/secure-session";
 import passportLocal from "passport-local";
 import { User } from "@prisma/client";
 import fastifyFormbody from "@fastify/formbody";
+import "./global";
 
 const app = fastify();
 dotenv.config({
@@ -26,32 +26,6 @@ dotenv.config({
 
 app.register(fastifyPrismaClient);
 app.register(fastifyFormbody);
-
-// fastifyPassport.use(
-//   new LocalStrategy.Strategy(async (username, password, done) => {
-//     let attemptedUser;
-
-//     try {
-//       attemptedUser = await app.prisma.user.findFirst({
-//         where: {
-//           email: username,
-//         },
-//       });
-//     } catch (e) {
-//       return done(e);
-//     }
-
-//     if (!attemptedUser) {
-//       return done(null, false);
-//     }
-
-//     if (bcrypt.compareSync(password, attemptedUser.password)) {
-//       return done(null, false);
-//     }
-
-//     return done(null, attemptedUser);
-//   })
-// );
 
 // Sessions
 app.register(fastifySecureSession, {
@@ -123,15 +97,25 @@ fastifyPassport.registerUserSerializer<User, string>(
 
 // ... and then a deserializer that will fetch that user from the database when a request with an id in the session arrives
 
+type Test = {
+  hello: string;
+};
+
 // TODO: what is unknown??
-fastifyPassport.registerUserDeserializer<string, unknown>(
+fastifyPassport.registerUserDeserializer<string, Test>(
   async (id, request) => {
-    return await app.prisma.user.findFirst({
+    return {
+      hello: "hello",
+    };
+  }
+
+  /*
+  await app.prisma.user.findFirst({
       where: {
         id,
       },
     });
-  }
+  */
 );
 
 const port = env.PORT || 4000;
