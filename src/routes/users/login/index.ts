@@ -12,7 +12,6 @@ export default async function routes(
       preHandler: passport.authenticate("local"),
     },
     async (request, reply) => {
-      // TODO: properly type this
       const user = request.user;
 
       if (!user) {

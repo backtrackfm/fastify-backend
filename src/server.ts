@@ -20,10 +20,6 @@ dotenv.config({
   path: path.join(__dirname, "..", ".env"),
 });
 
-// app.register(fastifySecureSession, {
-//   key: fs.readFileSync(path.join(__dirname, "../example-key")),
-// });
-
 app.register(fastifyPrismaClient);
 app.register(fastifyFormbody);
 
@@ -96,26 +92,14 @@ fastifyPassport.registerUserSerializer<User, string>(
 );
 
 // ... and then a deserializer that will fetch that user from the database when a request with an id in the session arrives
-
-type Test = {
-  hello: string;
-};
-
-// TODO: what is unknown??
-fastifyPassport.registerUserDeserializer<string, Test>(
+fastifyPassport.registerUserDeserializer<string, User | null>(
   async (id, request) => {
-    return {
-      hello: "hello",
-    };
-  }
-
-  /*
-  await app.prisma.user.findFirst({
+    return await app.prisma.user.findFirst({
       where: {
         id,
       },
     });
-  */
+  }
 );
 
 const port = env.PORT || 4000;
