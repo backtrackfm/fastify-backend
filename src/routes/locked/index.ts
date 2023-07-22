@@ -16,10 +16,16 @@ export default async function routes(
         await redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const user = request.user as User | undefined;
+      const user = request.user;
 
       if (!user) {
-        return reply.send("No user");
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "validation",
+          },
+          clientMessage: "You must be signed in to use this route",
+        });
       }
 
       stdReply(reply, {

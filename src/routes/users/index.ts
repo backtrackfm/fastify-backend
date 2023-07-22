@@ -2,6 +2,7 @@ import { FastifyInstance, RouteOptions } from "fastify";
 import { stdReply } from "../../lib/std-reply";
 import { signUpSchema } from "../../schema/usersSchema";
 import bcrypt from "bcrypt";
+import { redirectToLogin } from "../../lib/auth";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
   // CREATE A USER (SIGN UP)
@@ -49,6 +50,44 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
       data: tokenPayload,
     });
   });
+
+  // DELETE A USER
+  fastify.delete(
+    "/",
+    {
+      preValidation: async (request, reply) =>
+        await redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const user = request.user;
+
+      if (!user) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "validation",
+          },
+          clientMessage: "You must be signed in to use this route",
+        });
+      }
+
+      // Delete user
+      await fastify.prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+
+      stdReply(reply, {
+        data: {
+          user: {
+            id: user.id,
+          },
+        },
+        clientMessage: `Successfully deleted user ${user.id}`,
+      });
+    }
+  );
 }
 
 module.exports = routes;
