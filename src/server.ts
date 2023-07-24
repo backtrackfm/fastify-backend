@@ -8,19 +8,22 @@ import bcrypt from "bcrypt";
 import fs from "fs";
 import { ZodError } from "zod";
 import { StdReply, isStdReply, stdReply } from "./lib/std-reply";
-import fastifyPrismaClient from "fastify-prisma-client";
 import { fastifySecureSession } from "@fastify/secure-session";
 import passportLocal from "passport-local";
 import { User } from "@prisma/client";
 import fastifyFormbody from "@fastify/formbody";
-import "./global";
+import prismaPlugin from "./lib/prisma";
+
+declare module "fastify" {
+  interface PassportUser extends User {}
+}
 
 const app = fastify();
 dotenv.config({
   path: path.join(__dirname, "..", ".env"),
 });
 
-app.register(fastifyPrismaClient);
+app.register(prismaPlugin);
 app.register(fastifyFormbody);
 
 // Sessions
