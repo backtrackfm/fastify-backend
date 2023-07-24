@@ -1,6 +1,6 @@
-import passport from "@fastify/passport";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { stdReply } from "../../../lib/std-reply";
+import { redirectToLogin } from "../../../lib/auth";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -9,17 +9,13 @@ export default async function routes(
   fastify.post(
     "/",
     {
-      preHandler: passport.authenticate("local"),
+      preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const user = request.user;
+      request.logOut();
 
-      if (!user) {
-        throw new Error(); // Something went wrong...
-      }
-
-      stdReply(reply, {
-        clientMessage: `Successfully logged in as ${user.id}`,
+      return stdReply(reply, {
+        clientMessage: "Success! User signed out",
       });
     }
   );
