@@ -65,3 +65,11 @@ function isStdError(obj: unknown): obj is StdErrorType {
     ["not-found", "conflict", "validation", "unknown"].includes(stdError.type)
   );
 }
+
+export const stdNoAuth: StdReply = {
+  error: {
+    code: 400,
+    type: "validation",
+  },
+  clientMessage: "You must be signed in",
+};

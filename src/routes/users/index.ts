@@ -1,6 +1,6 @@
 import { FastifyInstance, RouteOptions } from "fastify";
-import { stdReply } from "../../lib/std-reply";
-import { signUpSchema } from "../../schema/usersSchema";
+import { stdNoAuth, stdReply } from "../../lib/std-reply";
+import { editUserSchema, signUpSchema } from "../../schema/usersSchema";
 import bcrypt from "bcrypt";
 import { redirectToLogin } from "../../lib/auth";
 
@@ -62,13 +62,7 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
       const user = request.user;
 
       if (!user) {
-        return stdReply(reply, {
-          error: {
-            code: 400,
-            type: "validation",
-          },
-          clientMessage: "You must be signed in to use this route",
-        });
+        return stdReply(reply, stdNoAuth);
       }
 
       // Delete user
@@ -85,6 +79,59 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
           },
         },
         clientMessage: `Successfully deleted user ${user.id}`,
+      });
+    }
+  );
+
+  // UPDATE A USER
+  fastify.patch(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const details = await editUserSchema.parseAsync(request.body);
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      // Validate this user's password with the password provided
+      const passwordMatch = await bcrypt.compare(
+        details.password,
+        request.user.password
+      );
+
+      if (!passwordMatch) {
+        return stdReply(reply, {
+          clientMessage: "Password doesn't match your current password",
+          error: {
+            type: "validation",
+            code: 400,
+            details:
+              "The field 'password' provided does not match the user's password",
+          },
+        });
+      }
+
+      const { password, newPassword, ...rest } = details;
+
+      // Update user
+      const updatedUser = await fastify.prisma.user.update({
+        where: {
+          id: request.user.id,
+        },
+        data: {
+          ...rest,
+          password: newPassword,
+        },
+      });
+
+      const { password: _, ...updatedUserDetails } = updatedUser;
+
+      return stdReply(reply, {
+        data: updatedUserDetails,
+        clientMessage: "Success! Updated user details",
       });
     }
   );

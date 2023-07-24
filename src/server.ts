@@ -8,19 +8,22 @@ import bcrypt from "bcrypt";
 import fs from "fs";
 import { ZodError } from "zod";
 import { StdReply, isStdReply, stdReply } from "./lib/std-reply";
-import fastifyPrismaClient from "fastify-prisma-client";
 import { fastifySecureSession } from "@fastify/secure-session";
 import passportLocal from "passport-local";
 import { User } from "@prisma/client";
 import fastifyFormbody from "@fastify/formbody";
-import "./global";
+import prismaPlugin from "./lib/prisma";
+
+declare module "fastify" {
+  interface PassportUser extends User {}
+}
 
 const app = fastify();
 dotenv.config({
   path: path.join(__dirname, "..", ".env"),
 });
 
-app.register(fastifyPrismaClient);
+app.register(prismaPlugin);
 app.register(fastifyFormbody);
 
 // Sessions
@@ -107,6 +110,16 @@ const port = env.PORT || 4000;
 app.setErrorHandler(function (error, request, reply) {
   console.log(error);
   if (error instanceof ZodError) {
+    if (!request.body) {
+      return stdReply(reply, {
+        error: {
+          code: 400,
+          type: "validation",
+        },
+        clientMessage: "No body provided",
+      });
+    }
+
     const issueMap = error.issues.map((it) => {
       return {
         field: it.path.join(" "),

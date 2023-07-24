@@ -19,7 +19,7 @@ export default async function routes(
       }
 
       stdReply(reply, {
-        clientMessage: `Successfully logged in as ${user.id}`,
+        clientMessage: `Successfully signed in as ${user.id}`,
       });
     }
   );
