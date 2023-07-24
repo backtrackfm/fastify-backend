@@ -110,6 +110,16 @@ const port = env.PORT || 4000;
 app.setErrorHandler(function (error, request, reply) {
   console.log(error);
   if (error instanceof ZodError) {
+    if (!request.body) {
+      return stdReply(reply, {
+        error: {
+          code: 400,
+          type: "validation",
+        },
+        clientMessage: "No body provided",
+      });
+    }
+
     const issueMap = error.issues.map((it) => {
       return {
         field: it.path.join(" "),
