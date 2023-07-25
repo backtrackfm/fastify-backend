@@ -13,10 +13,15 @@ import passportLocal from "passport-local";
 import { User } from "@prisma/client";
 import fastifyFormbody from "@fastify/formbody";
 import prismaPlugin from "./lib/prisma";
+import fastifyMultipart from "@fastify/multipart";
+import util from "util";
+import { pipeline } from "stream";
 
 declare module "fastify" {
   interface PassportUser extends User {}
 }
+
+export const pump = util.promisify(pipeline);
 
 const app = fastify();
 dotenv.config({
@@ -25,6 +30,7 @@ dotenv.config({
 
 app.register(prismaPlugin);
 app.register(fastifyFormbody);
+app.register(fastifyMultipart);
 
 // Sessions
 app.register(fastifySecureSession, {
@@ -109,8 +115,9 @@ const port = env.PORT || 4000;
 
 app.setErrorHandler(function (error, request, reply) {
   console.log(error);
+
   if (error instanceof ZodError) {
-    if (!request.body) {
+    if (!request.isMultipart() && !request.body) {
       return stdReply(reply, {
         error: {
           code: 400,
@@ -137,8 +144,21 @@ app.setErrorHandler(function (error, request, reply) {
     });
   }
 
-  // if error is a StdReply
+  if (
+    request.isMultipart() &&
+    error.message.includes("the request is not multipart")
+  ) {
+    return stdReply(reply, {
+      error: {
+        code: 400,
+        type: "validation",
+      },
+      clientMessage: "No body of type multipart/form-data provided",
+    });
+  }
+
   if (isStdReply(error)) {
+    // if error is a StdReply
     return stdReply(reply, error);
   }
 

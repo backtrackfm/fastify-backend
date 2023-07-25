@@ -1,7 +1,5 @@
 import { z } from "zod";
-
-const STD_STRING = z.string().min(3);
-const PASSWORD = z.string().min(6);
+import { PASSWORD, STD_STRING } from "./schemaUtils";
 
 export const signUpSchema = z.object({
   email: STD_STRING.email(),
