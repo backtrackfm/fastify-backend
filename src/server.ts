@@ -2,7 +2,6 @@ import fastify from "fastify";
 import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
-import { env } from "./lib/env";
 import fastifyPassport from "@fastify/passport";
 import bcrypt from "bcrypt";
 import fs from "fs";
@@ -13,18 +12,34 @@ import passportLocal from "passport-local";
 import { User } from "@prisma/client";
 import fastifyFormbody from "@fastify/formbody";
 import prismaPlugin from "./lib/prisma";
+import fastifyMultipart from "@fastify/multipart";
+import util from "util";
+import { pipeline } from "stream";
+import { S3Client } from "@aws-sdk/client-s3";
 
 declare module "fastify" {
   interface PassportUser extends User {}
 }
 
+export const pump = util.promisify(pipeline);
+
 const app = fastify();
-dotenv.config({
-  path: path.join(__dirname, "..", ".env"),
+
+// read .env file with configuration
+dotenv.config({});
+
+// create s3 client using your credentials
+export const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY as string,
+    secretAccessKey: process.env.AWS_SECRET_KEY as string,
+  },
 });
 
 app.register(prismaPlugin);
 app.register(fastifyFormbody);
+app.register(fastifyMultipart);
 
 // Sessions
 app.register(fastifySecureSession, {
@@ -105,12 +120,13 @@ fastifyPassport.registerUserDeserializer<string, User | null>(
   }
 );
 
-const port = env.PORT || 4000;
+const port = process.env.PORT || 4000;
 
 app.setErrorHandler(function (error, request, reply) {
   console.log(error);
+
   if (error instanceof ZodError) {
-    if (!request.body) {
+    if (!request.isMultipart() && !request.body) {
       return stdReply(reply, {
         error: {
           code: 400,
@@ -137,8 +153,21 @@ app.setErrorHandler(function (error, request, reply) {
     });
   }
 
-  // if error is a StdReply
+  if (
+    request.isMultipart() &&
+    error.message.includes("the request is not multipart")
+  ) {
+    return stdReply(reply, {
+      error: {
+        code: 400,
+        type: "validation",
+      },
+      clientMessage: "No body of type multipart/form-data provided",
+    });
+  }
+
   if (isStdReply(error)) {
+    // if error is a StdReply
     return stdReply(reply, error);
   }
 
@@ -160,11 +189,11 @@ app.register(autoload, {
   dirNameRoutePrefix: true, // lack of prefix will mean no prefix, instead of directory name
   routeParams: true,
   options: {
-    prefix: env.API_PREFIX,
+    prefix: process.env.API_PREFIX,
   },
 });
 
-app.listen({ port, host: "0.0.0.0" }, (err, address) => {
+app.listen({ port: port as number, host: "0.0.0.0" }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);

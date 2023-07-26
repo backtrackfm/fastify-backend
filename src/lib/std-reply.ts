@@ -3,7 +3,7 @@ import { FastifyReply } from "fastify";
 type StdErrorType = {
   details?: unknown; // Posibility to provide further details
   code: 400 | 500; // Sorry!
-  type: "not-found" | "conflict" | "validation" | "unknown";
+  type: "not-found" | "conflict" | "validation" | "unknown" | "auth";
 };
 
 export type StdReply = {
@@ -72,4 +72,12 @@ export const stdNoAuth: StdReply = {
     type: "validation",
   },
   clientMessage: "You must be signed in",
+};
+
+export const stdNoMultipart: StdReply = {
+  error: {
+    code: 400,
+    type: "validation",
+  },
+  clientMessage: "This endpoint requires format: multipart/form-data",
 };
