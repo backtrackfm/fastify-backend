@@ -73,6 +73,7 @@ export default async function routes(
             type: "auth",
             details: `${request.user.id} !== ${project.createdByUserId}`,
           },
+          clientMessage: "You can view your own projects",
         });
       }
 
@@ -188,6 +189,60 @@ export default async function routes(
       stdReply(reply, {
         data: replyDetails,
         clientMessage: `Created project ${details.name}`,
+      });
+    }
+  );
+
+  fastify.delete(
+    "/:id",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const { id } = request.params as { id: string };
+
+      // get this project
+      const project = await fastify.prisma.project.findFirst({
+        where: {
+          id,
+        },
+      });
+
+      if (!project) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "not-found",
+          },
+          clientMessage: `Project ${id} not found`,
+        });
+      }
+
+      // Make sure project is own
+      if (request.user.id !== project.createdByUserId) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "auth",
+            details: `${request.user.id} !== ${project.createdByUserId}`,
+          },
+          clientMessage: "You can only delete your own projects",
+        });
+      }
+
+      // Now we can delete project
+      await fastify.prisma.project.delete({
+        where: {
+          id,
+        },
+      });
+
+      return stdReply(reply, {
+        clientMessage: `Success! Deleted project ${project.id}`,
       });
     }
   );
