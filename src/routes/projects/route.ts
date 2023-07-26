@@ -24,7 +24,7 @@ export default async function routes(
 
       const projects = await fastify.prisma.project.findMany({
         where: {
-          id: request.user.id,
+          createdByUserId: request.user.id,
         },
       });
 
