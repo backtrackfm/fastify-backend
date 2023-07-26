@@ -35,6 +35,53 @@ export default async function routes(
     }
   );
 
+  // GET SINGLE PROJECT
+  fastify.get(
+    "/:id",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const { id } = request.params as { id: string };
+
+      const project = await fastify.prisma.project.findFirst({
+        where: {
+          id,
+        },
+      });
+
+      if (!project) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "not-found",
+          },
+          clientMessage: `Project ${id} not found`,
+        });
+      }
+
+      // NB: at the moment only show users their own projects
+      // TODO: expand on this
+      if (request.user.id !== project.createdByUserId) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "auth",
+            details: `${request.user.id} !== ${project.createdByUserId}`,
+          },
+        });
+      }
+
+      return stdReply(reply, {
+        data: project,
+      });
+    }
+  );
+
   // CREATE PROJECT
   fastify.post(
     "/",

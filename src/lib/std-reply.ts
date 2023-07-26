@@ -3,7 +3,7 @@ import { FastifyReply } from "fastify";
 type StdErrorType = {
   details?: unknown; // Posibility to provide further details
   code: 400 | 500; // Sorry!
-  type: "not-found" | "conflict" | "validation" | "unknown";
+  type: "not-found" | "conflict" | "validation" | "unknown" | "auth";
 };
 
 export type StdReply = {
