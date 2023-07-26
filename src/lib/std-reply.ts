@@ -73,3 +73,11 @@ export const stdNoAuth: StdReply = {
   },
   clientMessage: "You must be signed in",
 };
+
+export const stdNoMultipart: StdReply = {
+  error: {
+    code: 400,
+    type: "validation",
+  },
+  clientMessage: "This endpoint requires format: multipart/form-data",
+};
