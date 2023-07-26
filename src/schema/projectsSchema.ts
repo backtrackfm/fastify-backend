@@ -23,13 +23,12 @@ export const createProjectSchema = z.object({
         message: "Invalid JSON-formatted string array",
       }
     )
-    .transform((value) => {
+    .transform<string[]>((value) => {
       try {
         return JSON.parse(value);
       } catch (error) {
         throw new Error("Failed to parse JSON-formatted string array");
       }
-    })
-    .optional(), // would be array but fd doesn't allow anything other than strings.
+    }), // would be just be array but fd doesn't allow anything other than strings.
   description: STD_STRING.optional(),
 });
