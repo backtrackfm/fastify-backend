@@ -11,15 +11,38 @@ export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
 ) {
+  // GET ALL OF MY PROJECTS
+  fastify.get(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const projects = await fastify.prisma.project.findMany({
+        where: {
+          id: request.user.id,
+        },
+      });
+
+      return stdReply(reply, {
+        data: projects,
+        clientMessage: `Found ${projects.length} projects`,
+      });
+    }
+  );
+
+  // CREATE PROJECT
   fastify.post(
     "/",
     {
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const user = request.user;
-
-      if (!user) {
+      if (!request.user) {
         return stdReply(reply, stdNoAuth);
       }
 
@@ -48,6 +71,28 @@ export default async function routes(
       // zod parse these text details
       const details = await createProjectSchema.parseAsync(rawTextDetails);
 
+      // Ensure that this user doesn't already have a project with this name
+      const userProjectsWithName = await fastify.prisma.project.count({
+        where: {
+          createdByUserId: request.user.id,
+          name: {
+            equals: details.name,
+            mode: "insensitive",
+          },
+        },
+      });
+
+      if (userProjectsWithName > 0) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "conflict",
+            details: `${userProjectsWithName} project(s) with same name`,
+          },
+          clientMessage: `You already have a project called ${details.name}`,
+        });
+      }
+
       // TODO: Anything else?
 
       const createdProject = await fastify.prisma.project.create({
@@ -55,7 +100,7 @@ export default async function routes(
           ...details,
           createdBy: {
             connect: {
-              id: user.id,
+              id: request.user.id,
             },
           },
         },
@@ -68,7 +113,7 @@ export default async function routes(
       if (coverArtPart) {
         const filename = coverArtPart.filename;
         const extension = filename.slice(filename.lastIndexOf("."));
-        const path = `${user.id}/${createdProject.id}/coverArt${extension}`;
+        const path = `${request.user.id}/${createdProject.id}/coverArt${extension}`;
 
         const putObjectCommand = new PutObjectCommand({
           Bucket: process.env.AWS_BUCKET,
