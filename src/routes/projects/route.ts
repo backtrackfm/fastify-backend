@@ -189,6 +189,7 @@ export default async function routes(
           },
           data: {
             coverArtURL: url,
+            updatedAt: new Date(),
           },
         });
       }
@@ -200,6 +201,7 @@ export default async function routes(
     }
   );
 
+  // UPDATE USER
   fastify.patch(
     "/:id",
     {
@@ -274,6 +276,7 @@ export default async function routes(
         },
         data: {
           ...details,
+          updatedAt: new Date(),
         },
       });
 
@@ -306,6 +309,7 @@ export default async function routes(
           },
           data: {
             coverArtURL: url,
+            updatedAt: new Date(),
           },
         });
       }

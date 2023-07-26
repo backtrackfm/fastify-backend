@@ -124,6 +124,7 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
         data: {
           ...rest,
           password: newPassword,
+          updatedAt: new Date(),
         },
       });
 
