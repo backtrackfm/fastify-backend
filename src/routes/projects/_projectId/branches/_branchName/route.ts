@@ -1,7 +1,23 @@
-import { FastifyInstance, RouteOptions } from "fastify";
+import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../lib/auth";
 import { stdNoAuth, stdReply } from "../../../../../lib/std-reply";
 import { updateBranchSchema } from "../../../../../schema/branchesSchema";
+
+type RouteParams = {
+  branchName: string;
+  projectId: string;
+};
+
+// Encodes the branchName for us
+function parseParams(request: FastifyRequest) {
+  const { branchName: rawBranchName, projectId } =
+    request.params as RouteParams;
+
+  return {
+    branchName: decodeURIComponent(rawBranchName),
+    projectId,
+  };
+}
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -14,10 +30,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { branchId, projectId } = request.params as {
-        projectId: string;
-        branchId: string;
-      };
+      const { branchName, projectId } = parseParams(request);
 
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
@@ -25,8 +38,10 @@ export default async function routes(
 
       const branch = await fastify.prisma.branch.findFirst({
         where: {
-          id: branchId,
-          projectId: projectId,
+          AND: {
+            name: branchName,
+            projectId: projectId,
+          },
         },
         include: {
           project: true,
@@ -39,7 +54,7 @@ export default async function routes(
             code: 400,
             type: "not-found",
           },
-          clientMessage: `No branch ${branchId} found`,
+          clientMessage: `No branch ${branchName} found`,
         });
       }
 
@@ -69,10 +84,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { branchId, projectId } = request.params as {
-        projectId: string;
-        branchId: string;
-      };
+      const { branchName, projectId } = parseParams(request);
 
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
@@ -80,7 +92,7 @@ export default async function routes(
 
       const branch = await fastify.prisma.branch.findFirst({
         where: {
-          id: branchId,
+          name: branchName,
           projectId: projectId,
         },
         include: {
@@ -94,7 +106,7 @@ export default async function routes(
             code: 400,
             type: "not-found",
           },
-          clientMessage: `No branch ${branchId} found`,
+          clientMessage: `No branch ${branchName} found`,
         });
       }
 
@@ -111,12 +123,15 @@ export default async function routes(
 
       await fastify.prisma.branch.delete({
         where: {
-          id: branchId,
+          name_projectId: {
+            name: branchName,
+            projectId: projectId,
+          },
         },
       });
 
       return stdReply(reply, {
-        clientMessage: `Success! Deleted branch ${branch.id}`,
+        clientMessage: `Success! Deleted branch ${branch.name}`,
       });
     }
   );
@@ -128,10 +143,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { projectId, branchId } = request.params as {
-        projectId: string;
-        branchId: string;
-      };
+      const { projectId, branchName } = parseParams(request);
 
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
@@ -139,8 +151,10 @@ export default async function routes(
 
       const branch = await fastify.prisma.branch.findFirst({
         where: {
-          projectId,
-          id: branchId,
+          AND: {
+            name: branchName,
+            projectId: projectId,
+          },
         },
         include: {
           project: true,
@@ -153,7 +167,7 @@ export default async function routes(
             code: 400,
             type: "not-found",
           },
-          clientMessage: `No branch ${branchId} found`,
+          clientMessage: `No branch ${branchName} found`,
         });
       }
 
@@ -176,8 +190,10 @@ export default async function routes(
           updatedAt: new Date(),
         },
         where: {
-          id: branchId,
-          projectId: projectId,
+          name_projectId: {
+            name: branchName,
+            projectId,
+          },
         },
       });
 
