@@ -183,7 +183,7 @@ export default async function routes(
 
       stdReply(reply, {
         data: updatedBranch,
-        clientMessage: `Updated branch ${details.name}`,
+        clientMessage: `Updated branch ${updatedBranch.name}`,
       });
     }
   );
