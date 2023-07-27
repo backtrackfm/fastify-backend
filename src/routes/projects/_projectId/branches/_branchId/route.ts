@@ -6,6 +6,7 @@ export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
 ) {
+  // GET BRANCH BY ID
   fastify.get(
     "/",
     {
@@ -56,6 +57,65 @@ export default async function routes(
 
       return stdReply(reply, {
         data: rest,
+      });
+    }
+  );
+
+  // DELETE BRANCH
+  fastify.delete(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const { branchId, projectId } = request.params as {
+        projectId: string;
+        branchId: string;
+      };
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const branch = await fastify.prisma.branch.findFirst({
+        where: {
+          id: branchId,
+          projectId: projectId,
+        },
+        include: {
+          project: true,
+        },
+      });
+
+      if (!branch) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "not-found",
+          },
+          clientMessage: `No branch ${branchId} found`,
+        });
+      }
+
+      if (branch.project.createdByUserId !== request.user.id) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "validation",
+            details: `${request.user.id} !== ${branch.project.createdByUserId}`,
+          },
+          clientMessage: "You can only delete branches from your own projects",
+        });
+      }
+
+      await fastify.prisma.branch.delete({
+        where: {
+          id: branchId,
+        },
+      });
+
+      return stdReply(reply, {
+        clientMessage: `Success! Deleted branch ${branch.id}`,
       });
     }
   );

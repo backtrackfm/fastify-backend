@@ -179,6 +179,7 @@ export default async function routes(
     }
   );
 
+  // DELETE PROJECT
   fastify.delete(
     "/",
     {
