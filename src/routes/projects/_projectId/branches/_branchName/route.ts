@@ -14,7 +14,7 @@ function parseParams(request: FastifyRequest) {
     request.params as RouteParams;
 
   return {
-    branchName: decodeURIComponent(rawBranchName),
+    branchName: decodeURIComponent(rawBranchName).toLowerCase(),
     projectId,
   };
 }
