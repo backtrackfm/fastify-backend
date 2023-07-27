@@ -7,6 +7,7 @@ export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
 ) {
+  // CREATE BRANCH
   fastify.post(
     "/",
     {
@@ -82,6 +83,37 @@ export default async function routes(
       return stdReply(reply, {
         data: branch,
         clientMessage: `Success! Created branch ${branch.name}`,
+      });
+    }
+  );
+
+  // GET ALL BRANCHES IN PROJECT
+  fastify.get(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const { projectId } = request.params as {
+        projectId: string;
+      };
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const branches = await fastify.prisma.branch.findMany({
+        where: {
+          projectId: projectId,
+          project: {
+            createdByUserId: request.user.id,
+          },
+        },
+      });
+
+      return stdReply(reply, {
+        data: branches,
+        clientMessage: `Found ${branches.length} branches`,
       });
     }
   );
