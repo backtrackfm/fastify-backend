@@ -11,7 +11,7 @@
     "dev": "nodemon src/server.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.377.0",
+    "@aws-sdk/client-s3": "^3.378.0",
     "@fastify/autoload": "^5.7.1",
     "@fastify/formbody": "^7.4.0",
     "@fastify/multipart": "^7.7.3",
@@ -20,7 +20,7 @@
     "@prisma/client": "^5.0.0",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.3.1",
-    "fastify": "4.20.0",
+    "fastify": "4.21.0",
     "passport-local": "^1.0.0",
     "zod": "^3.21.4"
   },
