@@ -24,6 +24,9 @@ export default async function routes(
         where: {
           id: projectId,
         },
+        include: {
+          branches: true,
+        },
       });
 
       if (!project) {
@@ -48,6 +51,21 @@ export default async function routes(
       }
 
       const details = await createBranchSchema.parseAsync(request.body);
+
+      // We can't have duplicate branches
+      const duplicateMatches = project.branches.filter(
+        (it) => it.name.toLowerCase() === details.name.toLowerCase()
+      );
+
+      if (duplicateMatches.length > 0) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "conflict",
+          },
+          clientMessage: "You already have a branch with this name",
+        });
+      }
 
       // Now we know it's a valid project & it belongs to the user, create branch
       const branch = await fastify.prisma.branch.create({
