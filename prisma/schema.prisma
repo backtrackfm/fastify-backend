@@ -62,7 +62,7 @@ model Version {
   branchName      String
   projectId       String
   previews        Preview[]
-  projectFilesURL String // A URL to download the .als files
+  projectFilesURL String? // A URL to download the .als files
 
   @@id([name, branchName, projectId])
 }
@@ -72,7 +72,7 @@ model Preview {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
   title       String
-  fileURL     String
+  fileURL     String?
   version     Version  @relation(fields: [versionName, branchName, projectId], references: [name, branchName, projectId])
   versionName String
   branchName  String
