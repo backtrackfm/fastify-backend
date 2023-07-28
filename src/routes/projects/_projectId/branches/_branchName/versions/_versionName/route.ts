@@ -85,4 +85,72 @@ export default async function routes(
       });
     }
   );
+
+  fastify.delete(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const { branchName, versionName, projectId } = parseParams(request);
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const version = await fastify.prisma.version.findFirst({
+        where: {
+          AND: {
+            branchName,
+            name: versionName,
+            projectId,
+          },
+        },
+        include: {
+          branch: {
+            include: {
+              project: true,
+            },
+          },
+        },
+      });
+
+      if (!version) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "not-found",
+          },
+          clientMessage: `Version ${versionName} on branch ${branchName} in project ${projectId} not found`,
+        });
+      }
+
+      // Only the owner of the project can get versions
+      if (version.branch.project.createdByUserId !== request.user.id) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "auth",
+            details: `${request.user.id} !== ${version.branch.project.createdByUserId}`,
+          },
+          clientMessage: "You can only delete versions on your own branches",
+        });
+      }
+
+      // Delete version
+      await fastify.prisma.version.delete({
+        where: {
+          name_branchName_projectId: {
+            name: versionName,
+            branchName,
+            projectId,
+          },
+        },
+      });
+
+      return stdReply(reply, {
+        clientMessage: `Success! Deleted version ${versionName}`,
+      });
+    }
+  );
 }
