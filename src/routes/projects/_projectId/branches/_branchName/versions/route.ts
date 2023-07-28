@@ -21,7 +21,7 @@ type FileWithBuffer = {
   buffer: Buffer;
 };
 
-// Encodes the branchName for us
+// Decodes the branchName for us
 function parseParams(request: FastifyRequest) {
   const { branchName: rawBranchName, projectId } =
     request.params as RouteParams;
