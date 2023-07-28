@@ -3,6 +3,10 @@ import { redirectToLogin } from "../../../../lib/auth";
 import { stdNoAuth, stdReply } from "../../../../lib/std-reply";
 import { createBranchSchema } from "../../../../schema/branchesSchema";
 
+type RouteParams = {
+  projectId: string;
+};
+
 export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
@@ -14,7 +18,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { projectId } = request.params as { projectId: string };
+      const { projectId } = request.params as RouteParams;
 
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
@@ -94,9 +98,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { projectId } = request.params as {
-        projectId: string;
-      };
+      const { projectId } = request.params as RouteParams;
 
       if (!request.user) {
         return stdReply(reply, stdNoAuth);

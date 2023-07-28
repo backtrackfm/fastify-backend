@@ -7,6 +7,10 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getObjectURL } from "../../../lib/bucket-helpers";
 import { s3 } from "../../../server";
 
+type RouteParams = {
+  id: string;
+};
+
 export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
@@ -22,7 +26,7 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const { id } = request.params as { id: string };
+      const { id } = request.params as RouteParams;
 
       const project = await fastify.prisma.project.findFirst({
         where: {
@@ -66,7 +70,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { id } = request.params as { id: string };
+      const { id } = request.params as RouteParams;
 
       if (!request.isMultipart()) {
         return stdReply(reply, stdNoMultipart);
@@ -190,7 +194,7 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const { id } = request.params as { id: string };
+      const { id } = request.params as RouteParams;
 
       // get this project
       const project = await fastify.prisma.project.findFirst({
