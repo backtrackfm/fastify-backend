@@ -36,6 +36,72 @@ export default async function routes(
   fastify: FastifyInstance,
   options: RouteOptions
 ) {
+  fastify.get(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const { branchName, projectId } = parseParams(request);
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const versions = await fastify.prisma.version.findMany({
+        where: {
+          AND: {
+            branchName,
+            projectId,
+          },
+        },
+        include: {
+          branch: {
+            include: {
+              project: {
+                select: {
+                  createdByUserId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!versions || versions.length < 1) {
+        return stdReply(reply, {
+          data: [],
+          clientMessage: `Found 0 versions on branch ${branchName} in project ${projectId}`,
+        });
+      }
+
+      const projectOwner = versions[0].branch.project.createdByUserId;
+
+      if (projectOwner !== request.user.id) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "auth",
+            details: `${request.user.id} !== ${projectOwner}`,
+          },
+          clientMessage:
+            "You can only get versions on your own branches/projects",
+        });
+      }
+
+      const replyDetails = versions.map((it) => {
+        const { branch, ...a } = it;
+
+        return a;
+      });
+
+      return stdReply(reply, {
+        data: replyDetails,
+        clientMessage: `Found ${replyDetails.length} versions on branch ${branchName} in project ${projectId}`,
+      });
+    }
+  );
+
   fastify.post(
     "/",
     {
