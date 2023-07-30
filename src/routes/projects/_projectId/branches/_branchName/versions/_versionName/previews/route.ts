@@ -22,7 +22,7 @@ type FileWithBuffer = {
   buffer: Buffer;
 };
 
-// Decodes the branchName & versionNae for us
+// Decodes the branchName & versionName for us
 function parseParams(request: FastifyRequest): RouteParams {
   const {
     versionName: rawVersionName,
@@ -100,7 +100,11 @@ export default async function routes(
 
       // Read parts
 
-      const parts = request.parts();
+      const parts = request.parts({
+        limits: {
+          fileSize: 16000000,
+        },
+      });
       let rawTextDetails: any = {};
       const fileBufferParts: FileWithBuffer[] = [];
       let toSearchFieldnames = ["preview"];
@@ -166,7 +170,9 @@ export default async function routes(
       let replyDetails = preview;
 
       // Now upload file to s3
-      fileBufferParts.forEach(async ({ file, buffer }) => {
+      for (let i = 0; i < fileBufferParts.length; i++) {
+        const { file, buffer } = fileBufferParts[i];
+
         // TODO: TS gives weird error saying request.user can be undefined.
         if (!request.user) {
           return stdReply(reply, stdNoAuth);
@@ -198,7 +204,7 @@ export default async function routes(
             updatedAt: new Date(),
           },
         });
-      });
+      }
 
       return stdReply(reply, {
         data: replyDetails,

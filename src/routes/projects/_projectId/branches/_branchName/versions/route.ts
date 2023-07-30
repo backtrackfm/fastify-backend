@@ -118,7 +118,11 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const parts = request.parts();
+      const parts = request.parts({
+        limits: {
+          fileSize: 300000000, // NB: ~ 300mb
+        },
+      });
       let rawTextDetails: any = {};
       const fileBufferParts: FileWithBuffer[] = [];
       let toSearchFieldnames = ["projectFiles"];
@@ -207,7 +211,7 @@ export default async function routes(
       }
 
       // For now, can only create versions on your own projects
-      if (branch.project.createdByUserId === request.user.id) {
+      if (branch.project.createdByUserId !== request.user.id) {
         return stdReply(reply, {
           error: {
             code: 400,
@@ -236,7 +240,9 @@ export default async function routes(
       let replyDetails = version;
 
       // Now upload file zip to s3
-      fileBufferParts.forEach(async ({ file, buffer }) => {
+      for (let i = 0; i < fileBufferParts.length; i++) {
+        const { file, buffer } = fileBufferParts[i];
+
         // TODO: TS gives weird error saying request.user can be undefined.
         if (!request.user) {
           return stdReply(reply, stdNoAuth);
@@ -272,7 +278,7 @@ export default async function routes(
             updatedAt: new Date(),
           },
         });
-      });
+      }
 
       return stdReply(reply, {
         data: replyDetails,

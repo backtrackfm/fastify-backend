@@ -1,4 +1,4 @@
-import fastify from "fastify";
+import fastify, { errorCodes } from "fastify";
 import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
@@ -153,10 +153,18 @@ app.setErrorHandler(function (error, request, reply) {
     });
   }
 
-  if (
-    request.isMultipart() &&
-    error.message.includes("the request is not multipart")
-  ) {
+  // Multipart errors
+  if (error instanceof this.multipartErrors.RequestFileTooLargeError) {
+    return stdReply(reply, {
+      error: {
+        code: 400,
+        type: "validation",
+      },
+      clientMessage: "File is too large",
+    });
+  }
+
+  if (error instanceof this.multipartErrors.InvalidMultipartContentTypeError) {
     return stdReply(reply, {
       error: {
         code: 400,
