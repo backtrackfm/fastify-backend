@@ -53,6 +53,7 @@ export default async function routes(
               project: true,
             },
           },
+          previews: true,
         },
       });
 
