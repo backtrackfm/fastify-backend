@@ -11,13 +11,13 @@
     "dev": "nodemon src/server.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.378.0",
+    "@aws-sdk/client-s3": "^3.383.0",
     "@fastify/autoload": "^5.7.1",
     "@fastify/formbody": "^7.4.0",
     "@fastify/multipart": "^7.7.3",
     "@fastify/passport": "^2.3.0",
-    "@fastify/secure-session": "^6.1.0",
-    "@prisma/client": "^5.0.0",
+    "@fastify/secure-session": "^6.2.0",
+    "@prisma/client": "^5.1.0",
     "bcrypt": "^5.1.0",
     "dotenv": "^16.3.1",
     "fastify": "4.21.0",
@@ -26,10 +26,10 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
-    "@types/node": "^20.4.5",
+    "@types/node": "^20.4.6",
     "@types/passport-local": "^1.0.35",
     "nodemon": "^3.0.1",
-    "prisma": "^5.0.0",
+    "prisma": "^5.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"
   }

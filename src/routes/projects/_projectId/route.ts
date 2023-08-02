@@ -3,7 +3,7 @@ import { redirectToLogin } from "../../../lib/auth";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../../lib/std-reply";
 import { MultipartFile } from "@fastify/multipart";
 import { updateProjectSchema } from "../../../schema/projectsSchema";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getObjectURL } from "../../../lib/bucket-helpers";
 import { s3 } from "../../../server";
 
@@ -224,6 +224,16 @@ export default async function routes(
           clientMessage: "You can only delete your own projects",
         });
       }
+
+      // TODO: Delete from AWS
+      const path = `${request.user.id}/${project.id}`;
+
+      const deleteObjectCommand = new DeleteObjectCommand({
+        Bucket: process.env.AWS_BUCKET,
+        Key: path,
+      });
+
+      await s3.send(deleteObjectCommand);
 
       // Now we can delete project
       await fastify.prisma.project.delete({

@@ -121,6 +121,8 @@ export default async function routes(
         });
       }
 
+      // TODO: Delete from AWS
+
       await fastify.prisma.branch.delete({
         where: {
           name_projectId: {

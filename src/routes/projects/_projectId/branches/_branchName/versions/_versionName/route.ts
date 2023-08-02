@@ -138,6 +138,8 @@ export default async function routes(
         });
       }
 
+      // TODO: Delete from AWS
+
       // Delete version
       await fastify.prisma.version.delete({
         where: {

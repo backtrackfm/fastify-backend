@@ -1,4 +1,4 @@
-import fastify, { errorCodes } from "fastify";
+import fastify from "fastify";
 import * as dotenv from "dotenv";
 import autoload from "@fastify/autoload";
 import path from "path";
