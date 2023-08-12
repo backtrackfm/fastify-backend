@@ -1,11 +1,9 @@
+import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../lib/auth";
-import { createProjectSchema } from "../../schema/projectsSchema";
-import { s3 } from "../../server";
-import { MultipartFile } from "@fastify/multipart";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedObjectURL, uploadFile } from "../../lib/aws-storage";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../lib/std-reply";
-import { getObjectURL } from "../../lib/bucket-helpers";
+import { createProjectSchema } from "../../schema/projectsSchema";
 
 export default async function routes(
   fastify: FastifyInstance,
@@ -28,8 +26,17 @@ export default async function routes(
         },
       });
 
+      const projectsWithUrls = projects.map((proj) => {
+        return {
+          ...proj,
+          coverArtURL:
+            proj.coverArtStoragePath &&
+            getSignedObjectURL(proj.coverArtStoragePath),
+        };
+      });
+
       return stdReply(reply, {
-        data: projects,
+        data: projectsWithUrls,
         clientMessage: `Found ${projects.length} projects`,
       });
     }
@@ -111,6 +118,7 @@ export default async function routes(
       });
 
       let replyDetails = createdProject;
+      let url = "";
 
       // If there's a cover art, upload it to the cloud
       // Only do this if we KNOW that we have created the object as we require the ID
@@ -119,17 +127,8 @@ export default async function routes(
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${createdProject.id}/coverArt${extension}`;
 
-        const putObjectCommand = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: path,
-          Body: coverArtBuffer,
-          ContentType: coverArtPart.mimetype,
-        });
-
-        await s3.send(putObjectCommand);
-
-        // Now get the URL of this newly created object
-        const url = getObjectURL(path);
+        // Create object in s3
+        await uploadFile(coverArtBuffer, coverArtPart.mimetype, path);
 
         // And update the createdProject
         replyDetails = await fastify.prisma.project.update({
@@ -137,14 +136,16 @@ export default async function routes(
             id: createdProject.id,
           },
           data: {
-            coverArtURL: url,
+            coverArtStoragePath: path,
             updatedAt: new Date(),
           },
         });
+
+        url = await getSignedObjectURL(path);
       }
 
       stdReply(reply, {
-        data: replyDetails,
+        data: { ...replyDetails, url },
         clientMessage: `Created project ${details.name}`,
       });
     }

@@ -1,11 +1,13 @@
+import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../lib/auth";
+import {
+  deleteFile,
+  getSignedObjectURL,
+  uploadFile,
+} from "../../../lib/aws-storage";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../../lib/std-reply";
-import { MultipartFile } from "@fastify/multipart";
 import { updateProjectSchema } from "../../../schema/projectsSchema";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getObjectURL } from "../../../lib/bucket-helpers";
-import { s3 } from "../../../server";
 
 type RouteParams = {
   id: string;
@@ -58,7 +60,12 @@ export default async function routes(
       }
 
       return stdReply(reply, {
-        data: project,
+        data: {
+          ...project,
+          coverArtURL:
+            project.coverArtStoragePath &&
+            (await getSignedObjectURL(project.coverArtStoragePath)),
+        },
       });
     }
   );
@@ -143,6 +150,7 @@ export default async function routes(
       });
 
       let replyDetails = updatedProject;
+      let url = "";
 
       // If there's a cover art, upload it to the cloud
       // Only do this if we KNOW that we have created the object as we require the ID
@@ -152,17 +160,10 @@ export default async function routes(
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${updatedProject.id}/coverArt${extension}`;
 
-        const putObjectCommand = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: path,
-          Body: coverArtBuffer,
-          ContentType: coverArtPart.mimetype,
-        });
-
-        await s3.send(putObjectCommand);
+        await uploadFile(coverArtBuffer, coverArtPart.mimetype, path);
 
         // Now get the URL of this newly created object
-        const url = getObjectURL(path);
+        url = await getSignedObjectURL(path);
 
         // And update the createdProject
         replyDetails = await fastify.prisma.project.update({
@@ -170,14 +171,14 @@ export default async function routes(
             id: updatedProject.id,
           },
           data: {
-            coverArtURL: url,
+            coverArtStoragePath: path,
             updatedAt: new Date(),
           },
         });
       }
 
       stdReply(reply, {
-        data: replyDetails,
+        data: { ...replyDetails, url },
         clientMessage: `Updated project ${details.name}`,
       });
     }
@@ -224,6 +225,11 @@ export default async function routes(
           clientMessage: "You can only delete your own projects",
         });
       }
+
+      // TODO: Delete from AWS
+      const path = `${request.user.id}/${project.id}`;
+
+      deleteFile(path);
 
       // Now we can delete project
       await fastify.prisma.project.delete({
