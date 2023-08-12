@@ -1,6 +1,7 @@
 import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../../../lib/auth";
+import { deleteFile } from "../../../../../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../../../../../lib/std-reply";
 
 type RouteParams = {
@@ -158,6 +159,11 @@ export default async function routes(
           },
           clientMessage: "You can only delete previews on your own versions",
         });
+      }
+
+      // Delete file from s3 storage
+      if (preview.storagePath) {
+        await deleteFile(preview.storagePath);
       }
 
       // Delete version

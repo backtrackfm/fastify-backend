@@ -1,21 +1,21 @@
-import fastify from "fastify";
-import * as dotenv from "dotenv";
-import autoload from "@fastify/autoload";
-import path from "path";
-import fastifyPassport from "@fastify/passport";
-import bcrypt from "bcrypt";
-import fs from "fs";
-import { ZodError } from "zod";
-import { StdReply, isStdReply, stdReply } from "./lib/std-reply";
-import { fastifySecureSession } from "@fastify/secure-session";
-import passportLocal from "passport-local";
-import { User } from "@prisma/client";
-import fastifyFormbody from "@fastify/formbody";
-import prismaPlugin from "./lib/prisma";
-import fastifyMultipart from "@fastify/multipart";
-import util from "util";
-import { pipeline } from "stream";
 import { S3Client } from "@aws-sdk/client-s3";
+import autoload from "@fastify/autoload";
+import fastifyFormbody from "@fastify/formbody";
+import fastifyMultipart from "@fastify/multipart";
+import fastifyPassport from "@fastify/passport";
+import { fastifySecureSession } from "@fastify/secure-session";
+import { User } from "@prisma/client";
+import bcrypt from "bcrypt";
+import * as dotenv from "dotenv";
+import fastify from "fastify";
+import fs from "fs";
+import passportLocal from "passport-local";
+import path from "path";
+import { pipeline } from "stream";
+import util from "util";
+import { ZodError } from "zod";
+import prismaPlugin from "./lib/prisma";
+import { StdReply, isStdReply, stdReply } from "./lib/std-reply";
 
 declare module "fastify" {
   interface PassportUser extends User {}

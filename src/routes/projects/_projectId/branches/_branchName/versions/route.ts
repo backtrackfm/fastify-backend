@@ -1,15 +1,16 @@
+import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../lib/auth";
+import {
+  getSignedObjectURL,
+  uploadFile,
+} from "../../../../../../lib/aws-storage";
 import {
   stdNoAuth,
   stdNoMultipart,
   stdReply,
 } from "../../../../../../lib/std-reply";
-import { MultipartFile } from "@fastify/multipart";
 import { createVersionSchema } from "../../../../../../schema/versionsSchema";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../../../../../../server";
-import { getObjectURL } from "../../../../../../lib/bucket-helpers";
 
 type RouteParams = {
   branchName: string;
@@ -238,6 +239,8 @@ export default async function routes(
       });
 
       let replyDetails = version;
+      // TODO: only one version
+      let url = "";
 
       // Now upload file zip to s3
       for (let i = 0; i < fileBufferParts.length; i++) {
@@ -252,17 +255,10 @@ export default async function routes(
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${projectId}/${branchName}/${branchName}/projectFiles${extension}`;
 
-        const putObjectCommand = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: path,
-          Body: buffer,
-          ContentType: file.mimetype,
-        });
+        // Upload the file to s3
+        await uploadFile(buffer, file.mimetype, path);
 
-        await s3.send(putObjectCommand);
-
-        // Now get the URL of this newly created object
-        const url = getObjectURL(path);
+        url = await getSignedObjectURL(path);
 
         // And update the createdProject
         replyDetails = await fastify.prisma.version.update({
@@ -274,14 +270,14 @@ export default async function routes(
             },
           },
           data: {
-            projectFilesURL: url,
+            filesStoragePath: path,
             updatedAt: new Date(),
           },
         });
       }
 
       return stdReply(reply, {
-        data: replyDetails,
+        data: { ...replyDetails, url },
         clientMessage: `Success! Created version ${version.name}`,
       });
     }

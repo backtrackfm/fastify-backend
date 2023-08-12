@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../lib/auth";
+import { deleteFile } from "../../../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../../../lib/std-reply";
 
 type RouteParams = {
@@ -138,7 +139,10 @@ export default async function routes(
         });
       }
 
-      // TODO: Delete from AWS
+      // Delete from AWS
+      if (version.filesStoragePath) {
+        await deleteFile(version.filesStoragePath);
+      }
 
       // Delete version
       await fastify.prisma.version.delete({

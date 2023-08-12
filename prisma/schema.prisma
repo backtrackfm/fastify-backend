@@ -30,7 +30,7 @@ model Project {
   genre           String
   name            String
   tags            String[]
-  coverArtURL     String?
+  coverArtStoragePath     String?
   description     String?
   createdBy       User     @relation("ProjectByUser", fields: [createdByUserId], references: [id])
   createdByUserId String
@@ -62,7 +62,7 @@ model Version {
   branchName      String
   projectId       String
   previews        Preview[]
-  projectFilesURL String? // A URL to download the .als files
+  filesStoragePath String? // A storage path that can be used to get URL to download the .als files
 
   @@id([name, branchName, projectId])
 }
@@ -72,7 +72,7 @@ model Preview {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
   title       String
-  fileURL     String?
+  storagePath     String?
   version     Version  @relation(fields: [versionName, branchName, projectId], references: [name, branchName, projectId])
   versionName String
   branchName  String

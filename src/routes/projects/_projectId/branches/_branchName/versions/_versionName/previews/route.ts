@@ -1,15 +1,15 @@
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../../lib/auth";
+import { getObjectURL } from "../../../../../../../../lib/aws-storage";
 import {
   stdNoAuth,
   stdNoMultipart,
   stdReply,
 } from "../../../../../../../../lib/std-reply";
-import { MultipartFile } from "@fastify/multipart";
 import { createPreviewSchema } from "../../../../../../../../schema/versionsSchema";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../../../../../../server";
-import { getObjectURL } from "../../../../../../../../lib/bucket-helpers";
 
 type RouteParams = {
   versionName: string;

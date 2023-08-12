@@ -1,8 +1,8 @@
+import bcrypt from "bcrypt";
 import { FastifyInstance, RouteOptions } from "fastify";
+import { redirectToLogin } from "../../lib/auth";
 import { stdNoAuth, stdReply } from "../../lib/std-reply";
 import { editUserSchema, signUpSchema } from "../../schema/usersSchema";
-import bcrypt from "bcrypt";
-import { redirectToLogin } from "../../lib/auth";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
   // CREATE A USER (SIGN UP)
