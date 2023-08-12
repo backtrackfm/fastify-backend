@@ -1,7 +1,10 @@
 import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../../../lib/auth";
-import { deleteFile } from "../../../../../../../../../lib/aws-storage";
+import {
+  deleteFile,
+  getPublicObjectURL,
+} from "../../../../../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../../../../../lib/std-reply";
 
 type RouteParams = {
@@ -98,7 +101,12 @@ export default async function routes(
       const { version, ...replyDetails } = preview;
 
       return stdReply(reply, {
-        data: replyDetails,
+        data: {
+          ...replyDetails,
+          fileURL:
+            replyDetails.storagePath &&
+            (await getPublicObjectURL(replyDetails.storagePath)),
+        },
       });
     }
   );

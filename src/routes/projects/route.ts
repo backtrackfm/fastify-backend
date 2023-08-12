@@ -26,8 +26,17 @@ export default async function routes(
         },
       });
 
+      const projectsWithUrls = projects.map((proj) => {
+        return {
+          ...proj,
+          coverArtURL:
+            proj.coverArtStoragePath &&
+            getSignedObjectURL(proj.coverArtStoragePath),
+        };
+      });
+
       return stdReply(reply, {
-        data: projects,
+        data: projectsWithUrls,
         clientMessage: `Found ${projects.length} projects`,
       });
     }

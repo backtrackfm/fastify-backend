@@ -1,15 +1,16 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../../lib/auth";
-import { getObjectURL } from "../../../../../../../../lib/aws-storage";
+import {
+  getSignedObjectURL,
+  uploadFile,
+} from "../../../../../../../../lib/aws-storage";
 import {
   stdNoAuth,
   stdNoMultipart,
   stdReply,
 } from "../../../../../../../../lib/std-reply";
 import { createPreviewSchema } from "../../../../../../../../schema/versionsSchema";
-import { s3 } from "../../../../../../../../server";
 
 type RouteParams = {
   versionName: string;
@@ -99,7 +100,6 @@ export default async function routes(
       }
 
       // Read parts
-
       const parts = request.parts({
         limits: {
           fileSize: 16000000,
@@ -168,6 +168,7 @@ export default async function routes(
       });
 
       let replyDetails = preview;
+      let url = "";
 
       // Now upload file to s3
       for (let i = 0; i < fileBufferParts.length; i++) {
@@ -182,17 +183,11 @@ export default async function routes(
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${projectId}/${branchName}/${branchName}/projectFiles${extension}`;
 
-        const putObjectCommand = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: path,
-          Body: buffer,
-          ContentType: file.mimetype,
-        });
+        // Upload file to s3
+        await uploadFile(buffer, file.mimetype, path);
 
-        await s3.send(putObjectCommand);
-
-        // Now get the URL of this newly created object
-        const url = getObjectURL(path);
+        // get url
+        url = await getSignedObjectURL(path);
 
         // And update the createdProject
         replyDetails = await fastify.prisma.preview.update({
@@ -200,14 +195,14 @@ export default async function routes(
             id: preview.id,
           },
           data: {
-            fileURL: url,
+            storagePath: path,
             updatedAt: new Date(),
           },
         });
       }
 
       return stdReply(reply, {
-        data: replyDetails,
+        data: { ...replyDetails, url },
         clientMessage: `Success! Created preview ${preview.title}`,
       });
     }

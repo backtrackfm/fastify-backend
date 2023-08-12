@@ -96,8 +96,16 @@ export default async function routes(
         return a;
       });
 
+      const versionsWithURLs = replyDetails.map((v) => {
+        return {
+          ...v,
+          filesURL:
+            v.filesStoragePath && getSignedObjectURL(v.filesStoragePath),
+        };
+      });
+
       return stdReply(reply, {
-        data: replyDetails,
+        data: versionsWithURLs,
         clientMessage: `Found ${replyDetails.length} versions on branch ${branchName} in project ${projectId}`,
       });
     }

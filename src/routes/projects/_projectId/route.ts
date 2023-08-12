@@ -60,7 +60,12 @@ export default async function routes(
       }
 
       return stdReply(reply, {
-        data: project,
+        data: {
+          ...project,
+          coverArtURL:
+            project.coverArtStoragePath &&
+            (await getSignedObjectURL(project.coverArtStoragePath)),
+        },
       });
     }
   );

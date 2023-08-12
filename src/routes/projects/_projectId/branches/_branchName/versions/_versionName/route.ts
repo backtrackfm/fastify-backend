@@ -1,6 +1,9 @@
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../lib/auth";
-import { deleteFile } from "../../../../../../../lib/aws-storage";
+import {
+  deleteFile,
+  getSignedObjectURL,
+} from "../../../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../../../lib/std-reply";
 
 type RouteParams = {
@@ -83,7 +86,12 @@ export default async function routes(
       const { branch, ...replyDetails } = version;
 
       return stdReply(reply, {
-        data: replyDetails,
+        data: {
+          ...replyDetails,
+          filesURL:
+            replyDetails.filesStoragePath &&
+            (await getSignedObjectURL(replyDetails.filesStoragePath)),
+        },
       });
     }
   );
