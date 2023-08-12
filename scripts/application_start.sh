@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#give permission for everything in the express-app directory
-sudo chmod -R 777 /home/ec2-user/express-app
+#give permission for everything in the backtrack-backend directory
+sudo chmod -R 777 /home/ec2-user/backtrack-backend
 
 #navigate into our working directory where we have all our github files
-cd /home/ec2-user/express-app
+cd /home/ec2-user/backtrack-backend
 
 #add npm and node to path
 export NVM_DIR="$HOME/.nvm"
