@@ -35,12 +35,20 @@ jobs:
         id: check_deployment
         run: |
           deployment_id="${{ steps.deploy.outputs.deployment_id }}"
-          deployment_status=$(aws deploy get-deployment --deployment-id "$deployment_id" --query "deploymentInfo.status" --output text)
-          echo "Deployment status: $deployment_status"
+          while true; do
+            deployment_status=$(aws deploy get-deployment --deployment-id "$deployment_id" --query "deploymentInfo.status" --output text)
+            echo "Deployment status: $deployment_status"
 
-          if [[ "$deployment_status" == "Succeeded" ]]; then
-            echo "CodeDeploy deployment succeeded!"
-          else
-            echo "CodeDeploy deployment failed!"
-            exit 1
-          fi
+            if [[ "$deployment_status" == "Succeeded" ]]; then
+              echo "CodeDeploy deployment succeeded!"
+              break
+            elif [[ "$deployment_status" == "Failed" ]]; then
+              echo "CodeDeploy deployment failed!"
+              break
+            fi
+            else then
+              echo "Pending..."
+            fi
+
+            sleep 10  # Adjust the sleep duration as needed
+          done
