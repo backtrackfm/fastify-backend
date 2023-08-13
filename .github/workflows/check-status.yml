@@ -1,0 +1,31 @@
+name: Check Deployment Status
+
+on: deployment_status
+
+jobs:
+  check_deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2 # Change this to your desired region
+
+      - name: Verify deployment
+        run: |
+          # Replace 'YourApplicationName' and 'YourDeploymentGroupName' with your values
+          deployment_status=$(aws deploy get-deployment --deployment-id ${{ github.event.deployment.id }} | jq -r '.deploymentInfo.status')
+          echo "Deployment status: $deployment_status"
+
+          if [[ "$deployment_status" == "Succeeded" ]]; then
+            echo "CodeDeploy deployment succeeded!"
+          else
+            echo "CodeDeploy deployment failed!"
+            exit 1
+          fi
