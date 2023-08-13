@@ -31,6 +31,15 @@ jobs:
           echo "Deployment ID: $deployment_id"
           echo "::set-output name=deployment_id::$deployment_id"
 
+      - name: Update GH Deployment Status (Pending)
+        run: |
+          deployment_id="${{ steps.deploy.outputs.deployment_id }}"
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"state": "pending", "log_url": "https://github.com/'${{ github.repository }}'/actions/runs/'${{ github.run_id }}'", "description": "Deployment in progress"}' \
+            "https://api.github.com/repos/${{ github.repository }}/deployments/${deployment_id}/statuses"
+
+
       - name: Verify CodeDeploy Deployment Status
         id: check_deployment
         run: |
@@ -43,6 +52,10 @@ jobs:
 
             if [[ "$deployment_status" == "Succeeded" ]]; then
               echo "CodeDeploy deployment succeeded after $elapsed_time seconds"
+              curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -d '{"state": "success", "log_url": "https://github.com/'${{ github.repository }}'/actions/runs/'${{ github.run_id }}'", "description": "Deployment succeeded"}' \
+                "https://api.github.com/repos/${{ github.repository }}/deployments/${deployment_id}/statuses"
               break
             fi
 
