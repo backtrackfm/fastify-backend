@@ -42,7 +42,7 @@ jobs:
             echo "Deployment status: $deployment_status"
 
             if [[ "$deployment_status" == "Succeeded" ]]; then
-              echo "CodeDeploy deployment succeeded!"
+              echo "CodeDeploy deployment succeeded after $elapsed_time seconds"
               break
             fi
 
