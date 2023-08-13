@@ -17,7 +17,7 @@ export async function getSignedObjectURL(path: string) {
   const tick = new Date();
 
   const command = new GetObjectCommand({
-    Bucket: process.env.OS_AWS_BUCKET,
+    Bucket: process.env.AWS_BUCKET,
     Key: path,
   });
 
@@ -38,7 +38,7 @@ export async function getSignedObjectURL(path: string) {
  * @returns The URL
  */
 export function getPublicObjectURL(key: string) {
-  return `https://${process.env.OS_AWS_BUCKET}.s3.${process.env.OS_AWS_REGION}.amazonaws.com/${key}`;
+  return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 }
 
 /**
@@ -56,7 +56,7 @@ export async function uploadFile(
   // const byteArray = new Uint8Array(arrayBuffer);
 
   const putObjectCommand = new PutObjectCommand({
-    Bucket: process.env.OS_AWS_BUCKET,
+    Bucket: process.env.AWS_BUCKET,
     Key: path,
     Body: file,
     ContentType: contentType,
@@ -83,7 +83,7 @@ export function addExtension(ogNameWithExt: string, newName: string) {
  */
 export async function deleteFile(path: string) {
   const deleteObjectCommand = new DeleteObjectCommand({
-    Bucket: process.env.OS_AWS_BUCKET,
+    Bucket: process.env.AWS_BUCKET,
     Key: path,
   });
 

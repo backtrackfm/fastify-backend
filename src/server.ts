@@ -42,7 +42,8 @@ app.register(prismaPlugin);
 app.register(fastifyFormbody);
 app.register(fastifyMultipart);
 app.register(cors, {
-  allowedHeaders: "*",
+  origin: ["http://localhost:8888"],
+  credentials: true,
 });
 
 // Sessions

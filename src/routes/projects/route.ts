@@ -26,14 +26,20 @@ export default async function routes(
         },
       });
 
-      const projectsWithUrls = projects.map((proj) => {
+      const promises = projects.map(async (proj) => {
+        let url = "";
+
+        if (proj.coverArtStoragePath) {
+          url = await getSignedObjectURL(proj.coverArtStoragePath);
+        }
+
         return {
           ...proj,
-          coverArtURL:
-            proj.coverArtStoragePath &&
-            getSignedObjectURL(proj.coverArtStoragePath),
+          coverArtURL: url,
         };
       });
+
+      const projectsWithUrls = await Promise.all(promises);
 
       return stdReply(reply, {
         data: projectsWithUrls,
@@ -123,6 +129,7 @@ export default async function routes(
       // If there's a cover art, upload it to the cloud
       // Only do this if we KNOW that we have created the object as we require the ID
       if (coverArtPart) {
+        console.log("hello");
         const filename = coverArtPart.filename;
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${createdProject.id}/coverArt${extension}`;

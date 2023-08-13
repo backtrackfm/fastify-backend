@@ -34,6 +34,9 @@ export default async function routes(
         where: {
           id,
         },
+        include: {
+          branches: true,
+        },
       });
 
       if (!project) {
@@ -59,12 +62,16 @@ export default async function routes(
         });
       }
 
+      let url = "";
+
+      if (project.coverArtStoragePath) {
+        url = await getSignedObjectURL(project.coverArtStoragePath);
+      }
+
       return stdReply(reply, {
         data: {
           ...project,
-          coverArtURL:
-            project.coverArtStoragePath &&
-            (await getSignedObjectURL(project.coverArtStoragePath)),
+          coverArtURL: url,
         },
       });
     }
