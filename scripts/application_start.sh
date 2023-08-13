@@ -1,18 +1,6 @@
 #!/bin/bash
 
-#give permission for everything in the backtrack-backend directory
-sudo chmod -R 777 /home/ec2-user/backtrack-backend
+echo 'run application_start.sh: ' >> /home/ec2-user/backtrack-backend/deploy.log
 
-#navigate into our working directory where we have all our github files
-cd /home/ec2-user/backtrack-backend
-
-#add npm and node to path
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # loads nvm bash_completion (node is in path now)
-
-#install node modules
-npm install
-
-#start our node app in the background
-node . > app.out.log 2> app.err.log < /dev/null &
+echo 'pm2 restart backtrack-backend --update-env' >> /home/ec2-user/backtrack-backend/deploy.log
+pm2 restart backtrack-backend --update-env >> /home/ec2-user/backtrack-backend/deploy.log
