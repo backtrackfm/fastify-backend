@@ -1,1 +1,1 @@
-export const loginPageRoute = "/signin"; // in frontend
+export const loginPageRoute = "/auth/signin"; // in frontend

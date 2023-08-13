@@ -5,6 +5,41 @@ import { stdNoAuth, stdReply } from "../../lib/std-reply";
 import { editUserSchema, signUpSchema } from "../../schema/usersSchema";
 
 async function routes(fastify: FastifyInstance, options: RouteOptions) {
+  // GET SELF
+  fastify.get(
+    "/",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      const user = await fastify.prisma.user.findFirst({
+        where: {
+          id: request.user.id,
+        },
+      });
+
+      if (!user) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "auth",
+          },
+          clientMessage: "Invalid session",
+        });
+      }
+
+      const { password, ...details } = user;
+
+      return stdReply(reply, {
+        data: details,
+      });
+    }
+  );
+
   // CREATE A USER (SIGN UP)
   fastify.post("/", async (request, reply) => {
     const details = await signUpSchema.parseAsync(request.body);
