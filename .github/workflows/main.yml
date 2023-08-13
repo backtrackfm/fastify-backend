@@ -22,8 +22,25 @@ jobs:
       - name: Create CodeDeploy Deployment
         id: deploy
         run: |
-          aws deploy create-deployment \
-          --application-name backtrack-backend \
-          --deployment-group-name backtrack-backend-cd1 \
-          --deployment-config-name CodeDeployDefault.OneAtATime \
-          --github-location repository=${{ github.repository }},commitId=${{ github.sha }}
+          deployment_id=$(aws deploy create-deployment \
+            --application-name backtrack-backend \
+            --deployment-group-name backtrack-backend-cd1 \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --github-location repository=${{ github.repository }},commitId=${{ github.sha }} \
+            --query "deploymentId" --output text)
+          echo "Deployment ID: $deployment_id"
+          echo "::set-output name=deployment_id::$deployment_id"
+
+      - name: Verify CodeDeploy Deployment Status
+        id: check_deployment
+        run: |
+          deployment_id="${{ steps.deploy.outputs.deployment_id }}"
+          deployment_status=$(aws deploy get-deployment --deployment-id "$deployment_id" --query "deploymentInfo.status" --output text)
+          echo "Deployment status: $deployment_status"
+
+          if [[ "$deployment_status" == "Succeeded" ]]; then
+            echo "CodeDeploy deployment succeeded!"
+          else
+            echo "CodeDeploy deployment failed!"
+            exit 1
+          fi
