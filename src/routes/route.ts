@@ -5,6 +5,6 @@ export default async function routes(
   options: RouteOptions
 ) {
   fastify.get("/", async function (request, reply) {
-    reply.code(200).send({ hello: "world 3" });
+    reply.code(200).send({ hello: "world" });
   });
 }
