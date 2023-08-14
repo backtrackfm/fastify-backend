@@ -10,7 +10,7 @@ import { stdNoAuth, stdNoMultipart, stdReply } from "../../../lib/std-reply";
 import { updateProjectSchema } from "../../../schema/projectsSchema";
 
 type RouteParams = {
-  id: string;
+  projectId: string;
 };
 
 export default async function routes(
@@ -28,11 +28,11 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const { id } = request.params as RouteParams;
+      const { projectId } = request.params as RouteParams;
 
       const project = await fastify.prisma.project.findFirst({
         where: {
-          id,
+          id: projectId,
         },
         include: {
           branches: true,
@@ -45,7 +45,7 @@ export default async function routes(
             code: 400,
             type: "not-found",
           },
-          clientMessage: `Project ${id} not found`,
+          clientMessage: `Project ${projectId} not found`,
         });
       }
 
@@ -84,7 +84,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      const { id } = request.params as RouteParams;
+      const { projectId } = request.params as RouteParams;
 
       if (!request.isMultipart()) {
         return stdReply(reply, stdNoMultipart);
@@ -148,7 +148,7 @@ export default async function routes(
 
       const updatedProject = await fastify.prisma.project.update({
         where: {
-          id,
+          id: projectId,
         },
         data: {
           ...details,
@@ -202,12 +202,12 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const { id } = request.params as RouteParams;
+      const { projectId } = request.params as RouteParams;
 
       // get this project
       const project = await fastify.prisma.project.findFirst({
         where: {
-          id,
+          id: projectId,
         },
       });
 
@@ -217,7 +217,7 @@ export default async function routes(
             code: 400,
             type: "not-found",
           },
-          clientMessage: `Project ${id} not found`,
+          clientMessage: `Project ${projectId} not found`,
         });
       }
 
@@ -241,7 +241,7 @@ export default async function routes(
       // Now we can delete project
       await fastify.prisma.project.delete({
         where: {
-          id,
+          id: projectId,
         },
       });
 

@@ -16,6 +16,7 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
+      console.log("hello");
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
       }

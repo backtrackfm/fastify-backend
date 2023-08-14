@@ -12,6 +12,8 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
+      console.log("hello world");
+
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
       }
