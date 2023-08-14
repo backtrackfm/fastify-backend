@@ -3,7 +3,7 @@ import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../../../../../lib/auth";
 import {
   deleteFile,
-  getPublicObjectURL,
+  getSignedObjectURL,
 } from "../../../../../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../../../../../lib/std-reply";
 
@@ -105,7 +105,7 @@ export default async function routes(
           ...replyDetails,
           fileURL:
             replyDetails.storagePath &&
-            (await getPublicObjectURL(replyDetails.storagePath)),
+            (await getSignedObjectURL(replyDetails.storagePath)),
         },
       });
     }

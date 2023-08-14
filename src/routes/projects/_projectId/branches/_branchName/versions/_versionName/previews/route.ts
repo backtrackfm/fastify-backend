@@ -179,9 +179,11 @@ export default async function routes(
           return stdReply(reply, stdNoAuth);
         }
 
+        console.log(file);
+
         const filename = file.filename;
         const extension = filename.slice(filename.lastIndexOf("."));
-        const path = `${request.user.id}/${projectId}/${branchName}/${branchName}/projectFiles${extension}`;
+        const path = `${request.user.id}/${projectId}/${branchName}/${versionName}/projectFiles${extension}`;
 
         // Upload file to s3
         await uploadFile(buffer, file.mimetype, path);

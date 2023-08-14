@@ -32,7 +32,7 @@ model Project {
   tags            String[]
   coverArtStoragePath     String?
   description     String?
-  createdBy       User     @relation("ProjectByUser", fields: [createdByUserId], references: [id])
+  createdBy       User     @relation("ProjectByUser", fields: [createdByUserId], references: [id], onDelete: Cascade)
   createdByUserId String
   collaborators   User[]   @relation("ProjectIncludesUser")
   createdAt       DateTime @default(now())
@@ -45,7 +45,7 @@ model Branch {
   updatedAt   DateTime  @default(now())
   name        String
   description String?
-  project     Project   @relation(fields: [projectId], references: [id])
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId   String
   versions    Version[]
 
@@ -58,7 +58,7 @@ model Version {
   name            String
   tags            String[]
   description     String?
-  branch          Branch    @relation(fields: [branchName, projectId], references: [name, projectId])
+  branch          Branch    @relation(fields: [branchName, projectId], references: [name, projectId], onDelete: Cascade)
   branchName      String
   projectId       String
   previews        Preview[]
@@ -73,7 +73,7 @@ model Preview {
   updatedAt   DateTime @default(now())
   title       String
   storagePath     String?
-  version     Version  @relation(fields: [versionName, branchName, projectId], references: [name, branchName, projectId])
+  version     Version  @relation(fields: [versionName, branchName, projectId], references: [name, branchName, projectId], onDelete: Cascade)
   versionName String
   branchName  String
   projectId   String
