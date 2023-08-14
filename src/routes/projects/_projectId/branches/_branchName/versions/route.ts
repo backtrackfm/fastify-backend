@@ -66,6 +66,7 @@ export default async function routes(
               },
             },
           },
+          previews: true,
         },
       });
 
@@ -96,13 +97,26 @@ export default async function routes(
         return a;
       });
 
-      const versionsWithURLs = replyDetails.map((v) => {
+      const promises = replyDetails.map(async (it) => {
         return {
-          ...v,
-          filesURL:
-            v.filesStoragePath && getSignedObjectURL(v.filesStoragePath),
+          ...it,
+          filesURL: it.filesStoragePath
+            ? await getSignedObjectURL(it.filesStoragePath)
+            : undefined,
+          previews: await Promise.all(
+            it.previews.map(async (p) => {
+              return {
+                ...p,
+                fileURL: p.storagePath
+                  ? await getSignedObjectURL(p.storagePath)
+                  : undefined,
+              };
+            })
+          ),
         };
       });
+
+      const versionsWithURLs = await Promise.all(promises);
 
       return stdReply(reply, {
         data: versionsWithURLs,
