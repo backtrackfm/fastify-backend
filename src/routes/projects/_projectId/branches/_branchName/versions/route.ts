@@ -38,6 +38,47 @@ export default async function routes(
   options: RouteOptions
 ) {
   fastify.get(
+    "/latest",
+    {
+      preValidation: (request, reply) => redirectToLogin(request, reply),
+    },
+    async (request, reply) => {
+      const { branchName, projectId } = parseParams(request);
+
+      if (!request.user) {
+        return stdReply(reply, stdNoAuth);
+      }
+
+      // get latest version
+      const version = await fastify.prisma.version.findFirst({
+        where: {
+          AND: {
+            projectId,
+            branchName,
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (!version) {
+        return stdReply(reply, {
+          error: {
+            code: 400,
+            type: "not-found",
+          },
+          clientMessage: `Latest version on branch ${branchName} in project ${projectId} not found`,
+        });
+      }
+
+      return stdReply(reply, {
+        data: version,
+      });
+    }
+  );
+
+  fastify.get(
     "/",
     {
       preValidation: (request, reply) => redirectToLogin(request, reply),
