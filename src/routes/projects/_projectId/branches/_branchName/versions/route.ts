@@ -191,11 +191,10 @@ export default async function routes(
       const fileBufferParts: FileWithBuffer[] = [];
       let toSearchFieldnames = ["projectFiles"];
       const originalSearchSize = toSearchFieldnames.length;
+      let body;
 
       for await (const part of parts) {
-        if (part.type !== "file") {
-          rawTextDetails[part.fieldname] = part.value;
-        } else {
+        if (part.type === "file") {
           const searchMatches = toSearchFieldnames.filter(
             (it) => it === part.fieldname
           );
@@ -216,6 +215,10 @@ export default async function routes(
             // From: https://github.com/fastify/fastify-multipart
             await part.toBuffer();
           }
+        } else {
+          if (part.fieldname === "body") {
+            body = JSON.parse(part.value as string); // must be a string, this is ok.
+          }
         }
       }
 
@@ -232,7 +235,7 @@ export default async function routes(
       }
 
       // zod parse these text details
-      let details = await createVersionSchema.parseAsync(rawTextDetails);
+      let details = await createVersionSchema.parseAsync(body);
 
       details.name = details.name.toLowerCase();
 
