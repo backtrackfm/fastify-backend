@@ -123,6 +123,12 @@ export default async function routes(
               id: request.user.id,
             },
           },
+          branches: {
+            create: {
+              name: "original",
+              description: "The default branch",
+            },
+          },
         },
       });
 
