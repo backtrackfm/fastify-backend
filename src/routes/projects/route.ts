@@ -16,7 +16,6 @@ export default async function routes(
       preValidation: (request, reply) => redirectToLogin(request, reply),
     },
     async (request, reply) => {
-      console.log("hello");
       if (!request.user) {
         return stdReply(reply, stdNoAuth);
       }
@@ -65,15 +64,14 @@ export default async function routes(
       }
 
       const parts = request.parts();
-      let rawTextDetails: any = {};
       const coverArtFieldname = "coverArt";
       let coverArtPart: MultipartFile | undefined;
+
       let coverArtBuffer;
+      let body;
 
       for await (const part of parts) {
-        if (part.type !== "file") {
-          rawTextDetails[part.fieldname] = part.value;
-        } else {
+        if (part.type === "file") {
           if (part.fieldname === coverArtFieldname) {
             coverArtPart = part;
             coverArtBuffer = await part.toBuffer();
@@ -83,11 +81,15 @@ export default async function routes(
             // From: https://github.com/fastify/fastify-multipart
             await part.toBuffer();
           }
+        } else {
+          if (part.fieldname === "body") {
+            body = JSON.parse(part.value as string); // must be a string, this is ok.
+          }
         }
       }
 
       // zod parse these text details
-      const details = await createProjectSchema.parseAsync(rawTextDetails);
+      const details = await createProjectSchema.parseAsync(body);
 
       // Ensure that this user doesn't already have a project with this name
       const userProjectsWithName = await fastify.prisma.project.count({
