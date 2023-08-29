@@ -95,15 +95,18 @@ export default async function routes(
       }
 
       const parts = request.parts();
-      let rawTextDetails: any = {};
+      // let rawTextDetails: any = {};
 
       const coverArtFieldname = "coverArt";
       let coverArtPart: MultipartFile | undefined;
       let coverArtBuffer;
+      let body;
 
       for await (const part of parts) {
         if (part.type !== "file") {
-          rawTextDetails[part.fieldname] = part.value;
+          if (part.fieldname === "body") {
+            body = JSON.parse(part.value as string); // must be a string, this is ok.
+          }
         } else {
           if (part.fieldname === coverArtFieldname) {
             coverArtPart = part;
@@ -118,7 +121,7 @@ export default async function routes(
       }
 
       // zod parse these text details
-      const details = await updateProjectSchema.parseAsync(rawTextDetails);
+      const details = await updateProjectSchema.parseAsync(body);
 
       if (details.name) {
         // Ensure that this user doesn't already have a project with this name

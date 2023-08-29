@@ -88,6 +88,8 @@ export default async function routes(
         }
       }
 
+      console.log(body);
+
       // zod parse these text details
       const details = await createProjectSchema.parseAsync(body);
 
