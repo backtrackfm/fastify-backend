@@ -1,8 +1,12 @@
 // S3 storage bucket helpers
 
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
+  ObjectIdentifier,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -88,4 +92,52 @@ export async function deleteFile(path: string) {
   });
 
   await s3.send(deleteObjectCommand);
+}
+
+/**
+ * Renames a file in AWS by copying the file to the new path and deleting the old one
+ * @param path The path of the file to rename
+ * @param newPath The new path
+ */
+export async function renameFile(path: string, newPath: string) {
+  const copyObjectCommand = new CopyObjectCommand({
+    Bucket: process.env.AWS_BUCKET,
+    Key: newPath,
+    CopySource: path,
+  });
+
+  // Copy the file
+  await s3.send(copyObjectCommand);
+
+  // Now we can delete the old one
+  deleteFile(path);
+}
+
+// You must recursively delete objects in a folder in S3: https://stackoverflow.com/questions/20207063/how-can-i-delete-folder-on-s3-with-node-js
+export async function deleteFolder(path: string) {
+  const listObjectsCommand = new ListObjectsV2Command({
+    Bucket: process.env.AWS_BUCKET,
+    Prefix: path,
+  });
+
+  const listedObjects = await s3.send(listObjectsCommand);
+
+  if (!listedObjects.Contents || listedObjects.Contents.length === 0) return;
+
+  const objects: ObjectIdentifier[] = [];
+
+  listedObjects.Contents.forEach(({ Key }) => {
+    objects.push({ Key });
+  });
+
+  const deleteObjectsCommand = new DeleteObjectsCommand({
+    Bucket: process.env.AWS_BUCKET,
+    Delete: {
+      Objects: objects,
+    },
+  });
+
+  await s3.send(deleteObjectsCommand);
+
+  if (listedObjects.IsTruncated) await deleteFolder(path);
 }

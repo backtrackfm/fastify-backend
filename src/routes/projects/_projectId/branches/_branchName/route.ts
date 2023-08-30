@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../../../lib/auth";
+import { deleteFolder, renameFile } from "../../../../../lib/aws-storage";
 import { stdNoAuth, stdReply } from "../../../../../lib/std-reply";
 import { updateBranchSchema } from "../../../../../schema/branchesSchema";
 
@@ -97,6 +98,7 @@ export default async function routes(
         },
         include: {
           project: true,
+          versions: true,
         },
       });
 
@@ -129,6 +131,14 @@ export default async function routes(
           },
         },
       });
+
+      // We must delete all the files or folders inside of the branch folders
+      // Use all of the versions
+      for (const it of branch.versions) {
+        deleteFolder(
+          `/${request.user.id}/${projectId}/${branchName}/${it.name}`
+        );
+      }
 
       return stdReply(reply, {
         clientMessage: `Success! Deleted branch ${branch.name}`,
@@ -196,6 +206,14 @@ export default async function routes(
           },
         },
       });
+
+      // Update S3 if we have a new branch name
+      if (details.name) {
+        renameFile(
+          `/${request.user.id}/${projectId}/${branchName}`,
+          `/${request.user.id}/${projectId}/${details.name}`
+        );
+      }
 
       stdReply(reply, {
         data: updatedBranch,

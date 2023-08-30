@@ -1,11 +1,12 @@
-import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../lib/auth";
 import {
   deleteFile,
+  deleteFolder,
   getSignedObjectURL,
   uploadFile,
 } from "../../../lib/aws-storage";
+import { processFileParts } from "../../../lib/multipart-utils";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../../lib/std-reply";
 import { updateProjectSchema } from "../../../schema/projectsSchema";
 
@@ -77,7 +78,7 @@ export default async function routes(
     }
   );
 
-  // UPDATE USER
+  // UPDATE PROJECT
   fastify.patch(
     "/",
     {
@@ -94,31 +95,9 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const parts = request.parts();
-      // let rawTextDetails: any = {};
-
-      const coverArtFieldname = "coverArt";
-      let coverArtPart: MultipartFile | undefined;
-      let coverArtBuffer;
-      let body;
-
-      for await (const part of parts) {
-        if (part.type !== "file") {
-          if (part.fieldname === "body") {
-            body = JSON.parse(part.value as string); // must be a string, this is ok.
-          }
-        } else {
-          if (part.fieldname === coverArtFieldname) {
-            coverArtPart = part;
-            coverArtBuffer = await part.toBuffer();
-          } else {
-            // Can we do something better?
-            // Note: we MUST consume all parts
-            // From: https://github.com/fastify/fastify-multipart
-            await part.toBuffer();
-          }
-        }
-      }
+      const { body, files } = await processFileParts(request.parts(), [
+        "coverArt",
+      ]);
 
       // zod parse these text details
       const details = await updateProjectSchema.parseAsync(body);
@@ -162,15 +141,17 @@ export default async function routes(
       let replyDetails = updatedProject;
       let url = "";
 
+      const coverArt = files["coverArt"];
+
       // If there's a cover art, upload it to the cloud
       // Only do this if we KNOW that we have created the object as we require the ID
       // NB: This will overwrite any existing cover arts
-      if (coverArtPart) {
-        const filename = coverArtPart.filename;
+      if (coverArt) {
+        const filename = coverArt.file.filename;
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${updatedProject.id}/coverArt${extension}`;
 
-        await uploadFile(coverArtBuffer, coverArtPart.mimetype, path);
+        await uploadFile(coverArt.buffer, coverArt.file.mimetype, path);
 
         // Now get the URL of this newly created object
         url = await getSignedObjectURL(path);
@@ -236,10 +217,7 @@ export default async function routes(
         });
       }
 
-      // TODO: Delete from AWS
-      const path = `${request.user.id}/${project.id}`;
-
-      deleteFile(path);
+      deleteFolder(`${request.user.id}/${project.id}`);
 
       // Now we can delete project
       await fastify.prisma.project.delete({
