@@ -1,7 +1,7 @@
-import { MultipartFile } from "@fastify/multipart";
 import { FastifyInstance, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../lib/auth";
 import { getSignedObjectURL, uploadFile } from "../../lib/aws-storage";
+import { processFileParts } from "../../lib/multipart-utils";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../lib/std-reply";
 import { createProjectSchema } from "../../schema/projectsSchema";
 
@@ -63,32 +63,9 @@ export default async function routes(
         return stdReply(reply, stdNoAuth);
       }
 
-      const parts = request.parts();
-      const coverArtFieldname = "coverArt";
-      let coverArtPart: MultipartFile | undefined;
-
-      let coverArtBuffer;
-      let body;
-
-      for await (const part of parts) {
-        if (part.type === "file") {
-          if (part.fieldname === coverArtFieldname) {
-            coverArtPart = part;
-            coverArtBuffer = await part.toBuffer();
-          } else {
-            // Can we do something better?
-            // Note: we MUST consume all parts
-            // From: https://github.com/fastify/fastify-multipart
-            await part.toBuffer();
-          }
-        } else {
-          if (part.fieldname === "body") {
-            body = JSON.parse(part.value as string); // must be a string, this is ok.
-          }
-        }
-      }
-
-      console.log(body);
+      const { body, files } = await processFileParts(request.parts(), [
+        "coverArt",
+      ]);
 
       // zod parse these text details
       const details = await createProjectSchema.parseAsync(body);
@@ -139,14 +116,15 @@ export default async function routes(
 
       // If there's a cover art, upload it to the cloud
       // Only do this if we KNOW that we have created the object as we require the ID
-      if (coverArtPart) {
-        console.log("hello");
-        const filename = coverArtPart.filename;
+      const coverArt = files["coverArt"];
+
+      if (coverArt) {
+        const filename = coverArt.file.filename;
         const extension = filename.slice(filename.lastIndexOf("."));
         const path = `${request.user.id}/${createdProject.id}/coverArt${extension}`;
 
         // Create object in s3
-        await uploadFile(coverArtBuffer, coverArtPart.mimetype, path);
+        await uploadFile(coverArt.buffer, coverArt.file.mimetype, path);
 
         // And update the createdProject
         replyDetails = await fastify.prisma.project.update({
