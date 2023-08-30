@@ -38,6 +38,11 @@ export async function processFileParts<U = any>(
     }
   }
 
+  // Ensure enough fileParts
+  if (Object.keys(files).length !== fileFields.length) {
+    // TODO: Log something
+  }
+
   return {
     files,
     body,

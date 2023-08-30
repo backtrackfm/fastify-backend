@@ -5,6 +5,7 @@ import {
   getSignedObjectURL,
   uploadFile,
 } from "../../../../../../lib/aws-storage";
+import { processFileParts } from "../../../../../../lib/multipart-utils";
 import {
   stdNoAuth,
   stdNoMultipart,
@@ -15,11 +16,6 @@ import { createVersionSchema } from "../../../../../../schema/versionsSchema";
 type RouteParams = {
   branchName: string;
   projectId: string;
-};
-
-type FileWithBuffer = {
-  file: MultipartFile;
-  buffer: Buffer;
 };
 
 // Decodes the branchName for us
@@ -187,52 +183,8 @@ export default async function routes(
           fileSize: 300000000, // NB: ~ 300mb
         },
       });
-      let rawTextDetails: any = {};
-      const fileBufferParts: FileWithBuffer[] = [];
-      let toSearchFieldnames = ["projectFiles"];
-      const originalSearchSize = toSearchFieldnames.length;
-      let body;
 
-      for await (const part of parts) {
-        if (part.type === "file") {
-          const searchMatches = toSearchFieldnames.filter(
-            (it) => it === part.fieldname
-          );
-
-          if (searchMatches.length > 0) {
-            fileBufferParts.push({
-              buffer: await part.toBuffer(),
-              file: part,
-            });
-
-            // Now we're done searching, so remove from array
-            toSearchFieldnames = toSearchFieldnames.filter(
-              (it) => it === part.fieldname
-            );
-          } else {
-            // Note: we MUST consume all parts
-            // TODO: Can we do something better?
-            // From: https://github.com/fastify/fastify-multipart
-            await part.toBuffer();
-          }
-        } else {
-          if (part.fieldname === "body") {
-            body = JSON.parse(part.value as string); // must be a string, this is ok.
-          }
-        }
-      }
-
-      // Ensure enough fileParts
-      if (fileBufferParts.length !== originalSearchSize) {
-        return stdReply(reply, {
-          error: {
-            code: 400,
-            type: "validation",
-            details: `Looking for file fields: ${toSearchFieldnames}`,
-          },
-          clientMessage: `Only ${fileBufferParts.length}/${originalSearchSize} files provided`,
-        });
-      }
+      const { body, files } = await processFileParts(parts, ["projectFiles"]);
 
       // zod parse these text details
       let details = await createVersionSchema.parseAsync(body);
@@ -309,40 +261,35 @@ export default async function routes(
       let url = "";
 
       // Now upload file zip to s3
-      for (let i = 0; i < fileBufferParts.length; i++) {
-        const { file, buffer } = fileBufferParts[i];
+      const projectFiles = files["projectFiles"];
 
-        // TODO: TS gives weird error saying request.user can be undefined.
-        if (!request.user) {
-          return stdReply(reply, stdNoAuth);
-        }
+      const filename = projectFiles.file.filename;
+      const extension = projectFiles.file.filename.slice(
+        filename.lastIndexOf(".")
+      );
+      const path = `${request.user.id}/${projectId}/${branchName}/${replyDetails.name}/projectFiles${extension}`;
 
-        const filename = file.filename;
-        const extension = filename.slice(filename.lastIndexOf("."));
-        const path = `${request.user.id}/${projectId}/${branchName}/${replyDetails.name}/projectFiles${extension}`;
+      console.log(filename);
 
-        console.log(filename);
+      // Upload the file to s3
+      await uploadFile(projectFiles.buffer, projectFiles.file.mimetype, path);
 
-        // Upload the file to s3
-        await uploadFile(buffer, file.mimetype, path);
+      url = await getSignedObjectURL(path);
 
-        url = await getSignedObjectURL(path);
-
-        // And update the createdProject
-        replyDetails = await fastify.prisma.version.update({
-          where: {
-            name_branchName_projectId: {
-              branchName,
-              projectId,
-              name: details.name,
-            },
+      // And update the createdProject
+      replyDetails = await fastify.prisma.version.update({
+        where: {
+          name_branchName_projectId: {
+            branchName,
+            projectId,
+            name: details.name,
           },
-          data: {
-            filesStoragePath: path,
-            updatedAt: new Date(),
-          },
-        });
-      }
+        },
+        data: {
+          filesStoragePath: path,
+          updatedAt: new Date(),
+        },
+      });
 
       return stdReply(reply, {
         data: { ...replyDetails, url },

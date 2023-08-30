@@ -1,11 +1,6 @@
 import { FastifyInstance, RouteOptions } from "fastify";
 import { redirectToLogin } from "../../../lib/auth";
-import {
-  deleteFile,
-  deleteFolder,
-  getSignedObjectURL,
-  uploadFile,
-} from "../../../lib/aws-storage";
+import { getSignedObjectURL, uploadFile } from "../../../lib/aws-storage";
 import { processFileParts } from "../../../lib/multipart-utils";
 import { stdNoAuth, stdNoMultipart, stdReply } from "../../../lib/std-reply";
 import { updateProjectSchema } from "../../../schema/projectsSchema";
@@ -217,7 +212,7 @@ export default async function routes(
         });
       }
 
-      deleteFolder(`${request.user.id}/${project.id}`);
+      // TODO: Delete from AWS – do we want this functionality?
 
       // Now we can delete project
       await fastify.prisma.project.delete({

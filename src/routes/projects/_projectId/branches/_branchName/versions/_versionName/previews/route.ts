@@ -5,6 +5,7 @@ import {
   getSignedObjectURL,
   uploadFile,
 } from "../../../../../../../../lib/aws-storage";
+import { processFileParts } from "../../../../../../../../lib/multipart-utils";
 import {
   stdNoAuth,
   stdNoMultipart,
@@ -105,52 +106,11 @@ export default async function routes(
           fileSize: 16000000,
         },
       });
-      let rawTextDetails: any = {};
-      const fileBufferParts: FileWithBuffer[] = [];
-      let toSearchFieldnames = ["preview"];
-      const originalSearchSize = toSearchFieldnames.length;
 
-      for await (const part of parts) {
-        if (part.type !== "file") {
-          rawTextDetails[part.fieldname] = part.value;
-        } else {
-          const searchMatches = toSearchFieldnames.filter(
-            (it) => it === part.fieldname
-          );
-
-          if (searchMatches.length > 0) {
-            fileBufferParts.push({
-              buffer: await part.toBuffer(),
-              file: part,
-            });
-
-            // Now we're done searching, so remove from array
-            toSearchFieldnames = toSearchFieldnames.filter(
-              (it) => it === part.fieldname
-            );
-          } else {
-            // Note: we MUST consume all parts
-            // TODO: Can we do something better?
-            // From: https://github.com/fastify/fastify-multipart
-            await part.toBuffer();
-          }
-        }
-      }
-
-      // Ensure enough fileParts
-      if (fileBufferParts.length !== originalSearchSize) {
-        return stdReply(reply, {
-          error: {
-            code: 400,
-            type: "validation",
-            details: `Looking for file fields: ${toSearchFieldnames}`,
-          },
-          clientMessage: `Only ${fileBufferParts.length}/${originalSearchSize} files provided`,
-        });
-      }
+      const { body, files } = await processFileParts(parts, ["preview"]);
 
       // zod parse these text details
-      let details = await createPreviewSchema.parseAsync(rawTextDetails);
+      let details = await createPreviewSchema.parseAsync(body);
 
       const preview = await fastify.prisma.preview.create({
         data: {
@@ -171,37 +131,28 @@ export default async function routes(
       let url = "";
 
       // Now upload file to s3
-      for (let i = 0; i < fileBufferParts.length; i++) {
-        const { file, buffer } = fileBufferParts[i];
+      const previewFile = files["preview"];
 
-        // TODO: TS gives weird error saying request.user can be undefined.
-        if (!request.user) {
-          return stdReply(reply, stdNoAuth);
-        }
+      const filename = previewFile.file.filename;
+      const extension = filename.slice(filename.lastIndexOf("."));
+      const path = `${request.user.id}/${projectId}/${branchName}/${versionName}/projectFiles${extension}`;
 
-        console.log(file);
+      // Upload file to s3
+      await uploadFile(previewFile.buffer, previewFile.file.mimetype, path);
 
-        const filename = file.filename;
-        const extension = filename.slice(filename.lastIndexOf("."));
-        const path = `${request.user.id}/${projectId}/${branchName}/${versionName}/projectFiles${extension}`;
+      // get url
+      url = await getSignedObjectURL(path);
 
-        // Upload file to s3
-        await uploadFile(buffer, file.mimetype, path);
-
-        // get url
-        url = await getSignedObjectURL(path);
-
-        // And update the createdProject
-        replyDetails = await fastify.prisma.preview.update({
-          where: {
-            id: preview.id,
-          },
-          data: {
-            storagePath: path,
-            updatedAt: new Date(),
-          },
-        });
-      }
+      // And update the createdProject
+      replyDetails = await fastify.prisma.preview.update({
+        where: {
+          id: preview.id,
+        },
+        data: {
+          storagePath: path,
+          updatedAt: new Date(),
+        },
+      });
 
       return stdReply(reply, {
         data: { ...replyDetails, url },
