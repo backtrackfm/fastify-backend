@@ -135,7 +135,7 @@ export default async function routes(
 
       const filename = previewFile.file.filename;
       const extension = filename.slice(filename.lastIndexOf("."));
-      const path = `${request.user.id}/${projectId}/${branchName}/${versionName}/projectFiles${extension}`;
+      const path = `${request.user.id}/${projectId}/${branchName}/${versionName}/${preview.id}${extension}`;
 
       // Upload file to s3
       await uploadFile(previewFile.buffer, previewFile.file.mimetype, path);

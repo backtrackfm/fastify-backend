@@ -100,6 +100,8 @@ export async function deleteFile(path: string) {
  * @param newPath The new path
  */
 export async function renameFile(path: string, newPath: string) {
+  // NOTE: this doesn't work
+
   try {
     const copyObjectCommand = new CopyObjectCommand({
       Bucket: process.env.AWS_BUCKET,
