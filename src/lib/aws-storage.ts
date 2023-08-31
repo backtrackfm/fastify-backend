@@ -100,44 +100,52 @@ export async function deleteFile(path: string) {
  * @param newPath The new path
  */
 export async function renameFile(path: string, newPath: string) {
-  const copyObjectCommand = new CopyObjectCommand({
-    Bucket: process.env.AWS_BUCKET,
-    Key: newPath,
-    CopySource: path,
-  });
+  try {
+    const copyObjectCommand = new CopyObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: newPath,
+      CopySource: `${process.env.AWS_BUCKET}/${path}`,
+    });
 
-  // Copy the file
-  await s3.send(copyObjectCommand);
+    // Copy the file
+    await s3.send(copyObjectCommand);
 
-  // Now we can delete the old one
-  deleteFile(path);
+    // Now we can delete the old one
+    deleteFile(path);
+  } catch (e) {
+    return false;
+  }
 }
 
 // You must recursively delete objects in a folder in S3: https://stackoverflow.com/questions/20207063/how-can-i-delete-folder-on-s3-with-node-js
 export async function deleteFolder(path: string) {
-  const listObjectsCommand = new ListObjectsV2Command({
-    Bucket: process.env.AWS_BUCKET,
-    Prefix: path,
-  });
+  try {
+    const listObjectsCommand = new ListObjectsV2Command({
+      Bucket: process.env.AWS_BUCKET,
+      Prefix: path,
+    });
 
-  const listedObjects = await s3.send(listObjectsCommand);
+    const listedObjects = await s3.send(listObjectsCommand);
 
-  if (!listedObjects.Contents || listedObjects.Contents.length === 0) return;
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) return;
 
-  const objects: ObjectIdentifier[] = [];
+    const objects: ObjectIdentifier[] = [];
 
-  listedObjects.Contents.forEach(({ Key }) => {
-    objects.push({ Key });
-  });
+    listedObjects.Contents.forEach(({ Key }) => {
+      objects.push({ Key });
+    });
 
-  const deleteObjectsCommand = new DeleteObjectsCommand({
-    Bucket: process.env.AWS_BUCKET,
-    Delete: {
-      Objects: objects,
-    },
-  });
+    const deleteObjectsCommand = new DeleteObjectsCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Delete: {
+        Objects: objects,
+      },
+    });
 
-  await s3.send(deleteObjectsCommand);
+    await s3.send(deleteObjectsCommand);
 
-  if (listedObjects.IsTruncated) await deleteFolder(path);
+    if (listedObjects.IsTruncated) await deleteFolder(path);
+  } catch (e) {
+    return false;
+  }
 }
