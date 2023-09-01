@@ -158,7 +158,7 @@ async function routes(fastify: FastifyInstance, options: RouteOptions) {
         },
         data: {
           ...rest,
-          password: newPassword,
+          password: newPassword && (await bcrypt.hash(newPassword, 10)),
           updatedAt: new Date(),
         },
       });
