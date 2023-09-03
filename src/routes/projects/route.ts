@@ -24,6 +24,13 @@ export default async function routes(
         where: {
           createdByUserId: request.user.id,
         },
+        include: {
+          branches: {
+            include: {
+              versions: true,
+            },
+          },
+        },
       });
 
       const promises = projects.map(async (proj) => {
@@ -40,6 +47,8 @@ export default async function routes(
       });
 
       const projectsWithUrls = await Promise.all(promises);
+
+      console.log(projectsWithUrls);
 
       return stdReply(reply, {
         data: projectsWithUrls,
