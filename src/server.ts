@@ -42,7 +42,7 @@ app.register(prismaPlugin);
 app.register(fastifyFormbody);
 app.register(fastifyMultipart);
 app.register(cors, {
-  origin: ["*"],
+  origin: ["app://."],
   credentials: true,
 });
 
