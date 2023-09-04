@@ -1,6 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import autoload from "@fastify/autoload";
-import cors from "@fastify/cors";
 import fastifyFormbody from "@fastify/formbody";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyPassport from "@fastify/passport";
@@ -41,10 +40,12 @@ export const s3 = new S3Client({
 app.register(prismaPlugin);
 app.register(fastifyFormbody);
 app.register(fastifyMultipart);
-app.register(cors, {
-  origin: ["http://localhost:8888", "app://."],
-  credentials: true,
-});
+// app.register(cors, {
+//   origin: ["http://localhost:8888", "app://."],
+//   credentials: true,
+//   allowedHeaders: "Origin, X-Requested-With, Content-Type, Accept",
+//   methods: "GET, POST, PATCH, DELETE",
+// });
 
 // Sessions
 app.register(fastifySecureSession, {
