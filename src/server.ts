@@ -57,6 +57,7 @@ app.register(fastifySecureSession, {
     path: "/",
     // options for setCookie, see https://github.com/fastify/fastify-cookie
     sameSite: "none",
+    secure: true,
   },
 });
 
