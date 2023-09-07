@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import fastifyFormbody from "@fastify/formbody";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyPassport from "@fastify/passport";
-import { fastifySecureSession } from "@fastify/secure-session";
+import fastifySecureSession from "@fastify/secure-session";
 import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import * as dotenv from "dotenv";
@@ -56,8 +56,8 @@ app.register(fastifySecureSession, {
   cookie: {
     path: "/",
     // options for setCookie, see https://github.com/fastify/fastify-cookie
-    sameSite: "none",
-    secure: true,
+    sameSite: "lax",
+    secure: false,
     httpOnly: true,
   },
 });
